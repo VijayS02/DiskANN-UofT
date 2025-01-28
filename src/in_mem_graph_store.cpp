@@ -4,6 +4,8 @@
 #include "in_mem_graph_store.h"
 #include "utils.h"
 
+#include <tracking/graph_tracker.h>
+
 namespace diskann
 {
 InMemGraphStore::InMemGraphStore(const size_t total_pts, const size_t reserve_graph_degree)
@@ -194,6 +196,8 @@ std::tuple<uint32_t, uint32_t, size_t> InMemGraphStore::load_impl(const std::str
 
     diskann::cout << "done. Index has " << nodes_read << " nodes and " << cc << " out-edges, _start is set to " << start
                   << std::endl;
+
+    GraphTracker::SetTotalEdges(cc);
     return std::make_tuple(nodes_read, start, file_frozen_pts);
 }
 

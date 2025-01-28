@@ -13,6 +13,8 @@
 #include "tsl/robin_set.h"
 #include "windows_customizations.h"
 #include "tag_uint128.h"
+#include "tracking/graph_tracker.h"
+
 #if defined(DISKANN_RELEASE_UNUSED_TCMALLOC_MEMORY_AT_CHECKPOINTS) && defined(DISKANN_BUILD)
 #include "gperftools/malloc_extension.h"
 #endif
@@ -952,6 +954,7 @@ std::pair<uint32_t, uint32_t> Index<T, TagT, LabelT>::iterate_to_fixed_point(
         // Mark nodes visited
         for (auto id : id_scratch)
         {
+            GraphTracker::TraceRoute(n, id);
             if (fast_iterate)
             {
                 inserted_into_pool_bs[id] = 1;

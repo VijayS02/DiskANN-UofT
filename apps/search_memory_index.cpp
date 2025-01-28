@@ -22,6 +22,7 @@
 #include "utils.h"
 #include "program_options_utils.hpp"
 #include "index_factory.h"
+#include "tracking/graph_tracker.h"
 
 namespace po = boost::program_options;
 
@@ -89,6 +90,8 @@ int search_memory_index(diskann::Metric &metric, const std::string &index_path, 
                       .build();
 
     auto index_factory = diskann::IndexFactory(config);
+    GraphTracker::InitializeTracker(result_path_prefix + "_track.txt", result_path_prefix + "_edges.txt" );
+
     auto index = index_factory.create_instance();
     index->load(index_path.c_str(), num_threads, *(std::max_element(Lvec.begin(), Lvec.end())));
     std::cout << "Index loaded" << std::endl;
@@ -207,8 +210,11 @@ int search_memory_index(diskann::Metric &metric, const std::string &index_path, 
             auto qe = std::chrono::high_resolution_clock::now();
             std::chrono::duration<double> diff = qe - qs;
             latency_stats[i] = (float)(diff.count() * 1000000);
+            GraphTracker::EndQuery();
         }
         std::chrono::duration<double> diff = std::chrono::high_resolution_clock::now() - s;
+
+        GraphTracker::ClearTraces();
 
         double displayed_qps = query_num / diff.count();
 
@@ -272,6 +278,8 @@ int search_memory_index(diskann::Metric &metric, const std::string &index_path, 
     }
 
     diskann::aligned_free(query);
+
+    GraphTracker::EndTracker();
     return best_recall >= fail_if_recall_below ? 0 : -1;
 }
 

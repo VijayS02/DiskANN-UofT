@@ -21,4 +21,4 @@ def plot_utilization(json_file):
     plt.show()
 
 if __name__ == "__main__":
-    plot_utilization("../build/data/edge_util.json")
+    plot_utilization("../build/data/_edge_utilization.json")

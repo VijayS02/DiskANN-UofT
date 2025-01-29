@@ -1,40 +1,26 @@
+import json
 import matplotlib.pyplot as plt
 
-def plot_traces(file_name):
-    traces = []  # List to store each trace
-    current_trace = []  # Temporary list to store the current trace
-
-    # Read the file and process the data
-    with open(file_name, 'r') as file:
-        for line in file:
-            line = line.strip()
-            if line == "!END_TRACKER!":
-                if current_trace:
-                    traces.append(current_trace)  # Save the completed trace
-                    current_trace = []  # Reset for the next trace
-            else:
-                try:
-                    current_trace.append(float(line))  # Convert numbers to float
-                except ValueError:
-                    pass  # Ignore invalid lines
+def plot_from_json(json_file):
+    with open(json_file, 'r') as f:
+        data = json.load(f)
 
     plt.figure()
-    plt.xlabel('Edge Uses (#)')
-    plt.ylabel('# Edges')
-    plt.title(f'Edge Distribution Graph')
+    for test, distribution in data.items():
+        x = [int(k) for k in distribution.keys()]  # Times explored
+        y = [int(v) for v in distribution.values()]  # Edge counts
 
-    plt.grid(True)
-    # Plot each trace
-    for i, trace in enumerate(traces):
-        plt.scatter(range(len(trace)), trace, label=f'Query Set {i + 1}')
 
+        plt.scatter(x, y, label=test, alpha=0.7)
+        # plt.savefig(f"{test.replace(' ', '_')}.png")  # Save as PNG
+    plt.grid(axis='y', linestyle='--', alpha=0.7)
+    plt.xlabel('Number of Times Edge Explored')
     plt.legend()
-    plt.yscale("log")
-    plt.xscale("log")
-
+    plt.ylabel('Number of Edges')
+    plt.xscale('log')
+    plt.yscale('log')
+    plt.title(f'Edge Exploration Distribution')
     plt.show()
 
-# Usage
-
 if __name__ == "__main__":
-    plot_traces('../build/data/sift/res_edges.txt')
+    plot_from_json('../build/data/edge_dist.json')

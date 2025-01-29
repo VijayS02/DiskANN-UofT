@@ -1,135 +1,86 @@
 #include "tracking/graph_tracker.h"
+
+#include <cassert>
 #include <iostream>
 #include <fstream>
-
 
 //
 // Created by vijay on 1/27/25.
 //
 
-vector<vector<pair<uint32_t,uint32_t>>> GraphTracker::graph_history = {};
-vector<pair<uint32_t,uint32_t>> GraphTracker::current_query = {};
+#include <boost/serialization/vector.hpp>
+#include <boost/archive/binary_oarchive.hpp>
+#include <boost/archive/binary_iarchive.hpp>
+#include <boost/serialization/utility.hpp>
+
+vector<QueryTrace> GraphTracker::test_history = {};
+QueryTrace GraphTracker::current_query = {};
 int GraphTracker::total_edges = 0;
-unordered_map<pair<uint32_t, uint32_t>, long, PairHash> GraphTracker::edge_counts = {};
-long GraphTracker::unique_visits = 0;
-pair<long, pair<uint32_t,uint32_t>> GraphTracker::max_visited_edge = make_pair(0, make_pair(0, 0));
-string GraphTracker::trace_file_name;
-std::ofstream GraphTracker::trace_file;
+string GraphTracker::file_path;
+vector<TestData> GraphTracker::total_history = {};
+int GraphTracker::current_l = 0;
 
-vector<long> GraphTracker::edge_distributions = {};
-
-
-string GraphTracker::distribution_file_name;
-std::ofstream GraphTracker::distribution_file;
-
-
-void GraphTracker::InitializeTracker(const string& traceFileName, const string& rawEdgeFileName){
-    trace_file_name = traceFileName;
-    trace_file.open(traceFileName);
-
-    if (!trace_file.is_open()) {
-        std::cerr << "Failed to open the trace (EU) file." << std::endl;
+void saveToFile(const vector<TestData>& data, int total_edges, const string& filename) {
+    cout << "Writing to file " << filename << endl;
+    FullTrace trace = {
+    data, total_edges };
+    // Open file for binary output
+    ofstream ofs(filename, ios::binary);
+    if (!ofs) {
+        throw runtime_error("Failed to open file for writing.");
     }
 
-    distribution_file_name = rawEdgeFileName;
-    distribution_file.open(distribution_file_name);
+    // Create Boost binary archive
+    boost::archive::binary_oarchive oa(ofs);
 
-    if (!distribution_file.is_open()) {
-        std::cerr << "Failed to open the distribution file." << std::endl;
+    // Serialize data
+    oa << trace;
+
+    ofs.close();
+
+    cout << "Finished saving to " << filename << endl;
+}
+
+void GraphTracker::InitializeTracker(const string& filePath, int num_threads){
+    if (num_threads != 1)
+    {
+        std::cerr << "ERROR: Number of threads must be 1" << std::endl;
+        exit(1);
     }
-
+    file_path = filePath;
 }
 
 
 void GraphTracker::EndTracker(){
-    trace_file.close();
-    distribution_file.close();
+    saveToFile(total_history, total_edges, file_path + "_raw_edges.bin");
 }
 
 
 void GraphTracker::TraceRoute(uint32_t const id1, uint32_t const id2) {
-    current_query.emplace_back(make_pair(id1, id2));
+    QueryData data = {make_pair(id1, id2)};
+    current_query.emplace_back(std::move(data));
 }
 
-void GraphTracker::write_query_stats()
+void GraphTracker::StartTest(const int l)
 {
-    if (!trace_file.is_open())
-    {
-        return;
-    }
-
-    trace_file << (static_cast<float>(unique_visits) / static_cast<float>(total_edges)) << endl;
+    current_l = l;
 }
+
+
 
 void GraphTracker::EndQuery()
 {
-    for (auto pair : current_query)
-    {
-        edge_counts[pair]++;
-        if (edge_counts[pair] == 1)
-        {
-            unique_visits++;
-        }
-        if (edge_counts[pair] > max_visited_edge.first)
-        {
-            max_visited_edge.first = edge_counts[pair];
-            max_visited_edge.second = pair;
-        }
-    }
-    graph_history.push_back(std::move(current_query));
-    write_query_stats();
+    test_history.push_back(std::move(current_query));
 }
 
-void GraphTracker::ClearTraces(){
-    cout << "Unique Edges used: " << unique_visits << ", Max Edge Util: " << max_visited_edge.first << endl;
-    cout << "Edge Utilization: " << (float(unique_visits) / float(total_edges)) * 100 << "%" << endl;
-
-
-    edge_distributions.reserve(max_visited_edge.first + 1);
-
-    for (int i =0; i < max_visited_edge.first + 1; i++)
-    {
-        edge_distributions.push_back(0);
-
-    }
-
-    for (auto edge: edge_counts)
-    {
-        edge_distributions[edge.second]++;
-    }
-
-    edge_distributions[0] = total_edges - unique_visits;
-
-    unique_visits = 0;
-    max_visited_edge.first = 0;
-    edge_counts.clear();
-    graph_history.clear();
-
-    if (!trace_file.is_open()) {
-        return;
-    }
-
-    trace_file << "!END_TRACE!" << endl;
-
-    if (!distribution_file.is_open())
-    {
-        return;
-    }
-
-    for (auto item: edge_distributions)
-    {
-        distribution_file << item << endl;
-    }
-
-    distribution_file << "!END_TRACKER!" << endl;
+void GraphTracker::EndTest(){
+    TestData test = {
+    std::move(test_history), current_l};
+    total_history.push_back(std::move(test));
 }
 
 void GraphTracker::SetTotalEdges(int totalEdges){
     total_edges = totalEdges;
-    if (distribution_file.is_open())
-    {
-        distribution_file << total_edges << endl;
-    }
 }
 
 

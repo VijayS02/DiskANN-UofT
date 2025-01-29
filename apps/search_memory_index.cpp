@@ -90,7 +90,7 @@ int search_memory_index(diskann::Metric &metric, const std::string &index_path, 
                       .build();
 
     auto index_factory = diskann::IndexFactory(config);
-    GraphTracker::InitializeTracker(result_path_prefix + "_track.txt", result_path_prefix + "_edges.txt" );
+    GraphTracker::InitializeTracker(result_path_prefix, static_cast<int>(num_threads));
 
     auto index = index_factory.create_instance();
     index->load(index_path.c_str(), num_threads, *(std::max_element(Lvec.begin(), Lvec.end())));
@@ -214,7 +214,7 @@ int search_memory_index(diskann::Metric &metric, const std::string &index_path, 
         }
         std::chrono::duration<double> diff = std::chrono::high_resolution_clock::now() - s;
 
-        GraphTracker::ClearTraces();
+        GraphTracker::EndTest();
 
         double displayed_qps = query_num / diff.count();
 

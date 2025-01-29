@@ -79,7 +79,8 @@ public:
             for (size_t time_step = 0; time_step < utilizations[test_idx].size(); ++time_step) {
                 test_json[to_string(time_step + 1)] = utilizations[test_idx][time_step];
             }
-            output_json["Test " + to_string(test_idx)] = test_json;
+            string title = "L: " + to_string(fullTrace.tests[test_idx].L);
+            output_json[title] = test_json;
         }
 
         ofstream file(output_filename);
@@ -154,7 +155,8 @@ public:
             for (const auto& [query_idx, count] : distributions[test_idx]) {
                 test_json[to_string(query_idx)] = count;
             }
-            output_json["Test " + to_string(test_idx)] = test_json;
+            string title = "L: " + to_string(fullTrace.tests[test_idx].L);
+            output_json[title] = test_json;
         }
 
         ofstream file(output_filename);

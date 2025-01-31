@@ -16,7 +16,7 @@ def plot_from_json(json_file):
     plt.grid(axis='y', linestyle='--', alpha=0.7)
     plt.xlabel('Number of edges used')
     plt.legend()
-    plt.ylabel('Frequency')
+    plt.ylabel('Number of queries')
     # plt.xscale('log')
     # plt.yscale('log')
     plt.title(f'Edge Exploration Distribution')

@@ -886,6 +886,7 @@ std::pair<uint32_t, uint32_t> Index<T, TagT, LabelT>::iterate_to_fixed_point(
     {
         auto nbr = best_L_nodes.closest_unexpanded();
         auto n = nbr.id;
+        GraphTracker::VisitedNode(n, nbr.distance);
 
         // Add node to expanded nodes to create pool for prune later
         if (!search_invocation)
@@ -974,6 +975,8 @@ std::pair<uint32_t, uint32_t> Index<T, TagT, LabelT>::iterate_to_fixed_point(
         {
             best_L_nodes.insert(Neighbor(id_scratch[m], dist_scratch[m]));
         }
+
+        GraphTracker::SaveBestLNodes(best_L_nodes);
     }
     return std::make_pair(hops, cmps);
 }

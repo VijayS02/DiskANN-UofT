@@ -92,6 +92,8 @@ int search_memory_index(diskann::Metric &metric, const std::string &index_path, 
     auto index_factory = diskann::IndexFactory(config);
     GraphTracker::InitializeTracker(result_path_prefix, static_cast<int>(num_threads));
 
+    GraphTracker::SetK(static_cast<int>(recall_at));
+
     auto index = index_factory.create_instance();
     index->load(index_path.c_str(), num_threads, *(std::max_element(Lvec.begin(), Lvec.end())));
     std::cout << "Index loaded" << std::endl;

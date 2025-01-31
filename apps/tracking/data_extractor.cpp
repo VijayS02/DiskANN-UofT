@@ -60,7 +60,7 @@ public:
 
             // Iterate over each query trace (time step)
             for (const auto& query_trace : test.query_traces) {
-                for (const auto& query_data : query_trace) {
+                for (const auto& query_data : query_trace.edges_visited) {
                     if (unique_edges.insert(query_data.edge_explored).second) {
                         unique_edge_count++; // New unique edge found
                     }
@@ -101,7 +101,7 @@ public:
 
             // Count occurrences of each edge
             for (const auto& query_trace : test.query_traces) {
-                for (const auto& query_data : query_trace) {
+                for (const auto& query_data : query_trace.edges_visited) {
                     edge_counts[query_data.edge_explored]++;
                 }
             }
@@ -143,7 +143,7 @@ public:
 
             // Iterate over each query trace
             for (const auto& query: test.query_traces) {
-                visit_distribution[query.size()]++;
+                visit_distribution[query.edges_visited.size()]++;
             }
 
             distributions.push_back(visit_distribution);
@@ -166,12 +166,185 @@ public:
     }
 };
 
+
+class DistanceDistributionExtractor : public DataExtractor {
+public:
+    void extractAndSave(const FullTrace& fullTrace, const string& output_filename) override {
+        json output_json;
+
+        for (size_t test_idx = 0; test_idx < fullTrace.tests.size(); ++test_idx) {
+            map<int, pair<double, int>> dist_dist;
+            const auto& test = fullTrace.tests[test_idx];
+
+            const auto &quries = test.query_traces;
+            for (const auto &[edges_visited, node_visited, _] : quries)
+            {
+                const auto &visited = node_visited;
+                for (size_t step = 0; step < visited.size(); ++step)
+                {
+                    const auto &node = visited[step];
+                    if (dist_dist.find(step) == dist_dist.end())
+                    {
+                        dist_dist[step] = make_pair(node.distance, 1);
+                    }else
+                    {
+                        dist_dist[step].first += node.distance;
+                        dist_dist[step].second++;
+                    }
+                }
+            }
+            json test_json;
+            for (const auto& [step, dist_comp] : dist_dist)
+            {
+                double avg_dist = dist_comp.first / dist_comp.second;
+                test_json[to_string(step)] = avg_dist;
+            }
+
+            string title = "L: " + to_string(test.L);
+            output_json[title] = test_json;
+        }
+
+        ofstream file(output_filename);
+        file << output_json.dump(4);
+        file.close();
+        cout << "JSON written to " << output_filename << endl;
+    }
+};
+
+#define GRANULARITY 0.05
+
+class LatestPositionDistributionExtractor : public DataExtractor {
+public:
+    void extractAndSave(const FullTrace& fullTrace, const string& output_filename) override {
+        json output_json;
+
+        for (size_t test_idx = 0; test_idx < fullTrace.tests.size(); ++test_idx) {
+            const auto& test = fullTrace.tests[test_idx];
+            vector<double> step_prop; // Map step index -> (sum of distances, count)
+
+            for (const QueryTrace& query_trace : test.query_traces) {
+                float min_dist = INT_MAX;
+                int index = -1;
+                auto &visited = query_trace.node_visited;
+                for (size_t step = 0; step < visited.size(); ++step) {
+                    if (visited[step].distance <= min_dist)
+                    {
+                        min_dist = visited[step].distance;
+                        index = static_cast<int>(step);
+                    }
+                }
+
+                double prop = static_cast<double>(index)/ static_cast<double>(visited.size());
+                step_prop.push_back(prop);
+            }
+
+
+            // Convert vector into frequencies (bucketed by 0.05)
+
+            map<double, int> distribution;
+
+            for (double item : step_prop)
+            {
+                // round item to nearest 0.05
+                double rounded_v = std::round(item / GRANULARITY) * GRANULARITY;
+                distribution[rounded_v]++;
+            }
+
+            json test_json;
+            for (const auto& [prop, count] : distribution) {
+                test_json[to_string(prop)] = count;
+            }
+
+            string title = "L: " + to_string(test.L);
+            output_json[title] = test_json;
+        }
+
+        ofstream file(output_filename);
+        file << output_json.dump(4);
+        file.close();
+        cout << "JSON written to " << output_filename << endl;
+    }
+};
+
+
+class ConvergenceStepExtractor : public DataExtractor {
+public:
+    void extractAndSave(const FullTrace& fullTrace, const string& output_filename) override {
+        json output_json;
+
+        for (size_t test_idx = 0; test_idx < fullTrace.tests.size(); ++test_idx) {
+            const auto& test = fullTrace.tests[test_idx];
+            map<int, int> step_counts; // Maps step count -> number of queries that took this many steps
+
+            for (const QueryTrace& query_trace : test.query_traces) {
+                int steps = query_trace.node_visited.size();
+                step_counts[steps]++;
+            }
+
+            json test_json;
+            for (const auto& [steps, count] : step_counts) {
+                test_json[to_string(steps)] = count;
+            }
+
+            string title = "L: " + to_string(test.L);
+            output_json[title] = test_json;
+        }
+
+        ofstream file(output_filename);
+        file << output_json.dump(4);
+        file.close();
+        cout << "JSON written to " << output_filename << endl;
+    }
+};
+
+class ExactConvergenceStepExtractor : public DataExtractor {
+public:
+    void extractAndSave(const FullTrace& fullTrace, const string& output_filename) override {
+        json output_json;
+
+        for (size_t test_idx = 0; test_idx < fullTrace.tests.size(); ++test_idx) {
+            const auto& test = fullTrace.tests[test_idx];
+            vector<double> step_prop;
+
+            for (const QueryTrace& query_trace : test.query_traces) {
+                double prop = static_cast<double>(query_trace.converge_step)/ static_cast<double>(query_trace.node_visited.size());
+                step_prop.push_back(prop);
+            }
+
+
+            // Convert vector into frequencies (bucketed by 0.05)
+            map<double, int> distribution;
+
+            for (double item : step_prop)
+            {
+                // round item to nearest 0.05
+                double rounded_v = std::round(item / GRANULARITY) * GRANULARITY;
+                distribution[rounded_v]++;
+            }
+
+            json test_json;
+            for (const auto& [prop, count] : distribution) {
+                test_json[to_string(prop)] = count;
+            }
+
+            string title = "L: " + to_string(test.L);
+            output_json[title] = test_json;
+        }
+
+        ofstream file(output_filename);
+        file << output_json.dump(4);
+        file.close();
+        cout << "JSON written to " << output_filename << endl;
+    }
+};
+
+
 // **Main function**
 int main(int argc, char **argv) {
     if (argc < 3) {
         printf("Usage: ./data_extractor raw_edges_file output_prefix [extractors...]\n");
         printf("Available extractors:\n");
-        printf("  edge_utilization\n  edge_visits\n  hop_distribution\n");
+        printf("  edge_util\n  edge_visits\n  hop_dist\n distance_dist\n steps_dist\n latest_dist\n exact_conv");
         return 1;
     }
 
@@ -183,9 +356,13 @@ int main(int argc, char **argv) {
 
     // Extractor mapping
     map<string, unique_ptr<DataExtractor>> extractors;
-    extractors["edge_utilization"] = make_unique<EdgeUtilizationExtractor>();
+    extractors["edge_util"] = make_unique<EdgeUtilizationExtractor>();
     extractors["edge_visits"] = make_unique<EdgeVisitDistributionExtractor>();
-    extractors["hop_distribution"] = make_unique<HopDistributionExtractor>();
+    extractors["hop_dist"] = make_unique<HopDistributionExtractor>();
+    extractors["distance_dist"] = make_unique<DistanceDistributionExtractor>();
+    extractors["steps_dist"] = make_unique<ConvergenceStepExtractor>();
+    extractors["latest_dist"] = make_unique<LatestPositionDistributionExtractor>();
+    extractors["exact_conv"] = make_unique<ExactConvergenceStepExtractor>();
 
     // Process selected extractors
     for (int i = 3; i < argc; ++i) {

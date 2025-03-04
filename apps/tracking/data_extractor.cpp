@@ -339,6 +339,40 @@ public:
 };
 
 
+class EdgeDistExtractor : public DataExtractor {
+public:
+    void extractAndSave(const FullTrace& fullTrace, const string& output_filename) override {
+        json output_json;
+
+        uint32_t max = *std::max_element(fullTrace.edge_counts.begin(), fullTrace.edge_counts.end());
+
+        auto counts = vector<int> (max + 1, 0);
+
+        for (uint32_t i : fullTrace.edge_counts)
+        {
+            counts[static_cast<int>(i)]++;
+        }
+
+
+
+        // Convert to a dictionary (JSON object)
+        json counts_dict;
+        for (size_t i = 0; i < counts.size(); i++) {
+            if (counts[i] > 0) {  // Store only non-zero values
+                counts_dict[std::to_string(i)] = counts[i];  // JSON requires string keys
+            }
+        }
+
+        output_json["edge_counts"] = counts_dict;
+
+        ofstream file(output_filename);
+        file << output_json.dump(4);
+        file.close();
+        cout << "JSON written to " << output_filename << endl;
+    }
+};
+
+
 // **Main function**
 int main(int argc, char **argv) {
     if (argc < 3) {
@@ -363,6 +397,7 @@ int main(int argc, char **argv) {
     extractors["steps_dist"] = make_unique<ConvergenceStepExtractor>();
     extractors["latest_dist"] = make_unique<LatestPositionDistributionExtractor>();
     extractors["exact_conv"] = make_unique<ExactConvergenceStepExtractor>();
+    extractors["edge_dist"] = make_unique<EdgeDistExtractor>();
 
     // Process selected extractors
     for (int i = 3; i < argc; ++i) {

@@ -68,6 +68,7 @@ def plot_graphs(data_folder, file_prefix):
     file_configurations = {
         "_exact_conv.json":          (float, int, 'line', "Proportion of nodes visited until best K nodes were found", "Number of queries", "Convergence Step Distribution", False, True, True),
         "_distance_dist.json": (int, float, 'scatter', "Step in Query (Node Visited)", "Average Distance", "Average Distance per Step", False, False, False),
+        "_edge_dist.json":          (int, int, 'scatter', "Edge Count Distribution", "Number of Edges", "Count", False, False, True),
         "_edge_visits.json":          (int, int, 'scatter', "Edge Count Rank", "Number of Edges", "Edge Exploration Distribution", True, True, False),
         "_edge_utilization.json":     (int, float, 'scatter', "Time Step", "Edge Utilization", "Edge Utilization Over Time", False, False, False),
         "_hop_dist.json":     (int, int, 'scatter', "Number of edges used", "Number of queries", "Edge Exploration Distribution", False, False, False),

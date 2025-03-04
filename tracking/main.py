@@ -86,21 +86,21 @@ def create_build(project_root, build_subdir="script_output", type="Release", tra
 
 
 
-def run_data_extractor(sift_folder, apps_folder):
-    raw_edges_file = os.path.join(sift_folder, "res_raw_edges.bin")
+def run_data_extractor(output_folder, apps_folder):
+    raw_edges_file = os.path.join(output_folder, "res_raw_edges.bin")
     data_extractor = os.path.join(apps_folder, "tracking", "data_extractor")
-    output_folder = os.path.join(sift_folder, "stats")
 
     os.makedirs(output_folder, exist_ok=True)
 
     extractor = [
         data_extractor,
         raw_edges_file,
-        os.path.join(output_folder, 'r'),
+        os.path.join(output_folder, 'res'),
         "latest_dist",
         "hop_dist",
         "distance_dist",
-        "exact_conv"
+        "exact_conv",
+        "edge_dist"
     ]
 
     result = subprocess.run(extractor, stdout=None, stderr=None, text=True)
@@ -163,7 +163,7 @@ if __name__ == "__main__":
     print("Current directory:", current_dir)
     print("Parent directory:", parent_dir)
 
-    tracking = False
+    tracking = True
 
     build_output = create_build(parent_dir, tracking=tracking)
 
@@ -220,24 +220,24 @@ if __name__ == "__main__":
             "r":32,
             "l_build":50
         },
-        {
-            "ls":l_base,
-            "alpha": 1.2,
-            "r":64,
-            "l_build":50
-        },
-        {
-            "ls":l_base,
-            "alpha": 1.1,
-            "r":32,
-            "l_build":50
-        },
-        {
-            "ls":l_base,
-            "alpha": 1.1,
-            "r":64,
-            "l_build":50
-        },
+        # {
+        #     "ls":l_base,
+        #     "alpha": 1.2,
+        #     "r":64,
+        #     "l_build":50
+        # },
+        # {
+        #     "ls":l_base,
+        #     "alpha": 1.1,
+        #     "r":32,
+        #     "l_build":50
+        # },
+        # {
+        #     "ls":l_base,
+        #     "alpha": 1.1,
+        #     "r":64,
+        #     "l_build":50
+        # },
     ]
 
     for experiment in experiments:
@@ -306,6 +306,6 @@ if __name__ == "__main__":
         for result in results:
             print(f"{result[1]: >10.2f} QPS, for L : {result[0]}")
 
-    if tracking:
-        run_data_extractor(sift_folder, apps_dir)
-        combined_plotter.plot_graphs(os.path.join(sift_folder, "stats"), 'r')
+        if tracking:
+            run_data_extractor(experiment_folder, apps_dir)
+            combined_plotter.plot_graphs(experiment_folder, 'res')

@@ -179,6 +179,8 @@ std::tuple<uint32_t, uint32_t, size_t> InMemGraphStore::load_impl(const std::str
             diskann::cerr << "ERROR: Point found with no out-neighbours, point#" << nodes_read << std::endl;
         }
 
+        GraphTracker::AddEdgeCount(k);
+
         cc += k;
         ++nodes_read;
         std::vector<uint32_t> tmp(k);

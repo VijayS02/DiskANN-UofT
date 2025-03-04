@@ -1,0 +1,79 @@
+{
+  "version": 3,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 19
+  },
+  "configurePresets": [
+    {
+      "name": "debug",
+      "displayName": "Debug Build",
+      "description": "Debug configuration with Ninja",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/debug",
+      "cacheVariables": {
+        "DCMAKE_BUILD_TYPE": "Debug",
+        "DTRACKING_ENABLED": "OFF"
+      }
+    },
+    {
+      "name": "release",
+      "displayName": "Release Build",
+      "description": "Release configuration with Ninja",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/release",
+      "cacheVariables": {
+        "DCMAKE_BUILD_TYPE": "Release",
+        "DTRACKING_ENABLED": "OFF"
+      }
+    },
+    {
+      "name": "debug_tracking",
+      "displayName": "Debug Build (Tracking Enabled)",
+      "description": "Debug build with graph tracking enabled",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/debug_tracking",
+      "cacheVariables": {
+        "DCMAKE_BUILD_TYPE": "Debug",
+        "DTRACKING_ENABLED": "ON"
+      }
+    },
+    {
+      "name": "release_tracking",
+      "displayName": "Release Build (Tracking Enabled)",
+      "description": "Release build with graph tracking enabled",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/release_tracking",
+      "cacheVariables": {
+        "DCMAKE_BUILD_TYPE": "Release",
+        "DTRACKING_ENABLED": "ON"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "debug",
+      "configurePreset": "debug",
+      "description": "Build Debug with -j14",
+      "jobs": 14
+    },
+    {
+      "name": "release",
+      "configurePreset": "release",
+      "description": "Build Release with -j14",
+      "jobs": 14
+    },
+    {
+      "name": "debug_tracking",
+      "configurePreset": "debug_tracking",
+      "description": "Build Debug with Tracking enabled, -j14",
+      "jobs": 14
+    },
+    {
+      "name": "release_tracking",
+      "configurePreset": "release_tracking",
+      "description": "Build Release with Tracking enabled, -j14",
+      "jobs": 14
+    }
+  ]
+}

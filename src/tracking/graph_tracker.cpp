@@ -1,3 +1,5 @@
+#ifdef DISKANN_TRACKING_ENABLED
+
 #include "tracking/graph_tracker.h"
 
 #include <cassert>
@@ -23,6 +25,7 @@ vector<uint32_t> GraphTracker::best_k_nodes = {};
 int GraphTracker::step_num = 0;
 int GraphTracker::k = 0;
 int GraphTracker::converge_step = 0;
+bool GraphTracker::is_tracking = false;
 
 void saveToFile(const vector<TestData>& data, int total_edges, const string& filename) {
     cout << "Writing to file " << filename << endl;
@@ -51,6 +54,7 @@ void GraphTracker::InitializeTracker(const string& filePath, int num_threads){
         std::cerr << "ERROR: Number of threads must be 1" << std::endl;
         exit(1);
     }
+    is_tracking = true;
     file_path = filePath;
 }
 
@@ -61,6 +65,10 @@ void GraphTracker::EndTracker(){
 
 
 void GraphTracker::TraceRoute(uint32_t const id1, uint32_t const id2) {
+    if (!is_tracking)
+    {
+        return;
+    }
     EdgeData data = {make_pair(id1, id2)};
     current_query.edges_visited.emplace_back(std::move(data));
 }
@@ -91,12 +99,20 @@ void GraphTracker::SetTotalEdges(int totalEdges){
 
 void GraphTracker::VisitedNode(uint32_t id, float distance)
 {
+    if (!is_tracking)
+    {
+        return;
+    }
     NodeVisited node = {id, distance};
     current_query.node_visited.push_back(node);
 }
 
 void GraphTracker::SaveBestLNodes(diskann::NeighborPriorityQueue &best_l)
 {
+    if (!is_tracking)
+    {
+        return;
+    }
     step_num++;
 
     if (best_k_nodes.size() < k)
@@ -145,6 +161,7 @@ void GraphTracker::SetK(int in_k)
     k = in_k;
 }
 
+#endif
 
 
 

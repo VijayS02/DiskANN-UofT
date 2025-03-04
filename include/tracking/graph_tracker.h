@@ -4,12 +4,19 @@
 
 #ifndef GRAPH_TRACKER_H
 #define GRAPH_TRACKER_H
+#include <neighbor.h>
+
+
+#ifdef DISKANN_TRACKING_ENABLED
+# pragma message("TRACKING IS ENABLED!")
+
 #include <vector>
 #include <cstdint>
-#include <neighbor.h>
 #include <string>
 
+
 using namespace std;
+
 
 struct NodeVisited
 {
@@ -70,6 +77,7 @@ struct FullTrace
   }
 };
 
+
 class GraphTracker {
     public:
       static void TraceRoute(uint32_t id1, uint32_t id2);
@@ -93,6 +101,25 @@ private:
   static int step_num;
   static int k;
   static int converge_step;
+  static bool is_tracking;
 };
+
+#else
+
+class GraphTracker {
+public:
+  static inline void InitializeTracker(const std::string&, int) {}
+  static inline void EndTracker() {}
+  static inline void TraceRoute(uint32_t, uint32_t) {}
+  static inline void StartTest(int) {}
+  static inline void EndQuery() {}
+  static inline void EndTest() {}
+  static inline void SetTotalEdges(int) {}
+  static inline void VisitedNode(uint32_t, float) {}
+  static inline void SaveBestLNodes(diskann::NeighborPriorityQueue&) {}
+  static inline void SetK(int) {}
+};
+
+#endif // DISKANN_TRACKING_ENABLED
 
 #endif //GRAPH_TRACKER_H

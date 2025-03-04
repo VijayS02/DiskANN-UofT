@@ -27,6 +27,15 @@ if(NOT MSVC)
 	set(CMAKE_CXX_COMPILER g++)
 endif()
 
+option(TRACKING_ENABLED "Enable the graph tracker instrumentation" OFF)
+
+if(TRACKING_ENABLED)
+    add_definitions(-DDISKANN_TRACKING_ENABLED)
+endif()
+
+message(STATUS "Tracking code is: ${TRACKING_ENABLED}")
+
+
 set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake;${CMAKE_MODULE_PATH}")
 
 # Install nuget packages for dependencies.
@@ -331,3 +340,4 @@ include(clang-format.cmake)
 if(PYBIND)
     add_subdirectory(python)
 endif()
+

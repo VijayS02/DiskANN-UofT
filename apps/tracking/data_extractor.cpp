@@ -42,13 +42,42 @@ FullTrace loadFromFile(const string& filename) {
 class DataExtractor {
 public:
     virtual ~DataExtractor() = default;
-    virtual void extractAndSave(const FullTrace& fullTrace, const string& output_filename) = 0;
+
+    // Extracts the data but does NOT save it
+    virtual json extractData(const FullTrace& fullTrace) = 0;
+
+    // graph metadata for the visualization
+    json GraphProperties;
+
+    // Calls extractData, appends graph properties, and saves the JSON
+    void saveJson(const FullTrace& fullTrace, const string& output_filename) {
+        json output_json = {};
+        output_json["data"] = extractData(fullTrace);
+        output_json["graph_properties"] = GraphProperties;
+
+        ofstream file(output_filename);
+        file << output_json.dump(4);
+        file.close();
+        cout << "JSON written to " << output_filename << endl;
+    }
 };
 
 // **Extractor 1: Edge Utilization**
 class EdgeUtilizationExtractor : public DataExtractor {
 public:
-    void extractAndSave(const FullTrace& fullTrace, const string& output_filename) override {
+    EdgeUtilizationExtractor(){
+     GraphProperties =
+        json::parse(R"(
+          {
+            "title": "Edge Utilization Over Time",
+            "x_label":"Time Step",
+            "y_label": "Edge Utilization",
+            "type": "scatter"
+          }
+        )");
+    }
+
+    json extractData(const FullTrace& fullTrace) override {
         vector<vector<double>> utilizations;
 
         for (const auto& test : fullTrace.tests) {
@@ -76,24 +105,38 @@ public:
         json output_json;
         for (size_t test_idx = 0; test_idx < utilizations.size(); ++test_idx) {
             json test_json;
-            for (size_t time_step = 0; time_step < utilizations[test_idx].size(); ++time_step) {
+            for (size_t time_step = 0; time_step < utilizations[test_idx].size(); ++time_step)
+            {
                 test_json[to_string(time_step + 1)] = utilizations[test_idx][time_step];
             }
-            string title = "L: " + to_string(fullTrace.tests[test_idx].L);
+            const string title = "L: " + to_string(fullTrace.tests[test_idx].L);
             output_json[title] = test_json;
         }
 
-        ofstream file(output_filename);
-        file << output_json.dump(4);
-        file.close();
-        cout << "JSON written to " << output_filename << endl;
+        return output_json;
     }
 };
 
 // **Extractor 2: Edge Visit Distribution**
 class EdgeVisitDistributionExtractor : public DataExtractor {
 public:
-    void extractAndSave(const FullTrace& fullTrace, const string& output_filename) override {
+    EdgeVisitDistributionExtractor()
+    {
+        GraphProperties = json::parse(R"(
+    {
+        "title": "Edge Exploration Distribution",
+        "x_label": "Edge Count Rank",
+        "y_label": "Number of Edges",
+        "type": "scatter",
+        "x_log": true,
+        "y_log": true,
+        "sort_x": false,
+        "marker": "o"
+    }
+    )");
+    }
+
+    json extractData(const FullTrace& fullTrace) override {
         vector<map<int, int>> distributions; // One per TestData
 
         for (const auto& test : fullTrace.tests) {
@@ -125,17 +168,31 @@ public:
             output_json[name] = test_json;
         }
 
-        ofstream file(output_filename);
-        file << output_json.dump(4);
-        file.close();
-        cout << "JSON written to " << output_filename << endl;
+        return output_json;
     }
 };
 
 // **Extractor 3: Hop Distribution**
 class HopDistributionExtractor : public DataExtractor {
 public:
-    void extractAndSave(const FullTrace& fullTrace, const string& output_filename) override {
+
+    HopDistributionExtractor()
+    {
+        GraphProperties = json::parse(R"(
+        {
+            "title": "Edge Exploration Distribution",
+            "x_label": "Number of edges used",
+            "y_label": "Number of queries",
+            "type": "scatter",
+            "x_log": false,
+            "y_log": false,
+            "sort_x": false,
+            "marker": "o"
+        }
+        )");
+    }
+
+    json extractData(const FullTrace& fullTrace) override {
         vector<map<int, int>> distributions; // One per TestData
 
         for (const auto& test : fullTrace.tests) {
@@ -159,17 +216,29 @@ public:
             output_json[title] = test_json;
         }
 
-        ofstream file(output_filename);
-        file << output_json.dump(4);
-        file.close();
-        cout << "JSON written to " << output_filename << endl;
+        return output_json;
     }
 };
 
 
 class DistanceDistributionExtractor : public DataExtractor {
 public:
-    void extractAndSave(const FullTrace& fullTrace, const string& output_filename) override {
+    DistanceDistributionExtractor(){
+        GraphProperties = json::parse(R"(
+        {
+            "title": "Average Distance per Step",
+            "x_label": "Step in Query {Node Visited}",
+            "y_label": "Average Distance",
+            "type": "scatter",
+            "x_log": false,
+            "y_log": false,
+            "sort_x": false,
+            "marker": "o"
+        }
+        )");
+    }
+
+    json extractData(const FullTrace& fullTrace) override {
         json output_json;
 
         for (size_t test_idx = 0; test_idx < fullTrace.tests.size(); ++test_idx) {
@@ -204,10 +273,7 @@ public:
             output_json[title] = test_json;
         }
 
-        ofstream file(output_filename);
-        file << output_json.dump(4);
-        file.close();
-        cout << "JSON written to " << output_filename << endl;
+        return output_json;
     }
 };
 
@@ -215,7 +281,23 @@ public:
 
 class LatestPositionDistributionExtractor : public DataExtractor {
 public:
-    void extractAndSave(const FullTrace& fullTrace, const string& output_filename) override {
+    LatestPositionDistributionExtractor()
+    {
+        GraphProperties = json::parse(R"(
+    {
+        "title": "Convergence Step Distribution",
+        "x_label": "Proportion of nodes visited until lowest distance was found",
+        "y_label": "Number of queries",
+        "type": "line",
+        "x_log": false,
+        "y_log": true,
+        "sort_x": true,
+        "marker": "o"
+    }
+    )");
+    }
+
+    json extractData(const FullTrace& fullTrace) override {
         json output_json;
 
         for (size_t test_idx = 0; test_idx < fullTrace.tests.size(); ++test_idx) {
@@ -259,17 +341,30 @@ public:
             output_json[title] = test_json;
         }
 
-        ofstream file(output_filename);
-        file << output_json.dump(4);
-        file.close();
-        cout << "JSON written to " << output_filename << endl;
+        return output_json;
     }
 };
 
 
 class ConvergenceStepExtractor : public DataExtractor {
 public:
-    void extractAndSave(const FullTrace& fullTrace, const string& output_filename) override {
+    ConvergenceStepExtractor()
+    {
+        GraphProperties = json::parse(R"(
+    {
+        "title": "Convergence Step Distribution",
+        "x_label": "Number of Steps Taken to Converge",
+        "y_label": "Number of Queries",
+        "type": "line",
+        "x_log": false,
+        "y_log": true,
+        "sort_x": false,
+        "marker": "o"
+    }
+    )");
+    }
+
+    json extractData(const FullTrace& fullTrace) override {
         json output_json;
 
         for (size_t test_idx = 0; test_idx < fullTrace.tests.size(); ++test_idx) {
@@ -290,16 +385,29 @@ public:
             output_json[title] = test_json;
         }
 
-        ofstream file(output_filename);
-        file << output_json.dump(4);
-        file.close();
-        cout << "JSON written to " << output_filename << endl;
+        return output_json;
     }
 };
 
 class ExactConvergenceStepExtractor : public DataExtractor {
 public:
-    void extractAndSave(const FullTrace& fullTrace, const string& output_filename) override {
+    ExactConvergenceStepExtractor()
+    {
+        GraphProperties = json::parse(R"(
+        {
+            "title": "Convergence Step Distribution",
+            "x_label": "Proportion of nodes visited until best K nodes were found",
+            "y_label": "Number of queries",
+            "type": "line",
+            "x_log": false,
+            "y_log": true,
+            "sort_x": true,
+            "marker": "o"
+        }
+        )");
+    }
+
+    json extractData(const FullTrace& fullTrace) override {
         json output_json;
 
         for (size_t test_idx = 0; test_idx < fullTrace.tests.size(); ++test_idx) {
@@ -331,17 +439,30 @@ public:
             output_json[title] = test_json;
         }
 
-        ofstream file(output_filename);
-        file << output_json.dump(4);
-        file.close();
-        cout << "JSON written to " << output_filename << endl;
+        return output_json;
     }
 };
 
 
 class EdgeDistExtractor : public DataExtractor {
 public:
-    void extractAndSave(const FullTrace& fullTrace, const string& output_filename) override {
+    EdgeDistExtractor()
+    {
+        GraphProperties = json::parse(R"(
+        {
+            "title": "Edge Count Distribution",
+            "x_label": "Number of Edges",
+            "y_label": "Count",
+            "type": "scatter",
+            "x_log": false,
+            "y_log": false,
+            "sort_x": true,
+            "marker": "o"
+        }
+        )");
+    }
+
+    json extractData(const FullTrace& fullTrace) override {
         json output_json;
 
         uint32_t max = *std::max_element(fullTrace.edge_counts.begin(), fullTrace.edge_counts.end());
@@ -365,10 +486,7 @@ public:
 
         output_json["edge_counts"] = counts_dict;
 
-        ofstream file(output_filename);
-        file << output_json.dump(4);
-        file.close();
-        cout << "JSON written to " << output_filename << endl;
+        return output_json;
     }
 };
 
@@ -404,7 +522,7 @@ int main(int argc, char **argv) {
         string extractor_name = argv[i];
         if (extractors.find(extractor_name) != extractors.end()) {
             string output_filename = output_prefix + "_" + extractor_name + ".json";
-            extractors[extractor_name]->extractAndSave(data, output_filename);
+            extractors[extractor_name]->saveJson(data, output_filename);
         } else {
             cout << "Unknown extractor: " << extractor_name << endl;
         }

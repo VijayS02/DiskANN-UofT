@@ -45,7 +45,7 @@ class ConstructionTracker {
 
 #else
 
-class ConstructionTrakcer {
+class ConstructionTracker {
 public:
   static inline void StartConstruction() {}
   static inline void TraceRoute(uint32_t id1, uint32_t id2){}

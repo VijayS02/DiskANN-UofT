@@ -1049,7 +1049,7 @@ void Index<T, TagT, LabelT>::search_for_point_and_prune(int location, uint32_t L
         }
     }
 
-    ConstructionTrakcer::AddConstructionPathLength(pool.size());
+    ConstructionTracker::AddConstructionPathLength(pool.size());
 
     if (pruned_list.size() > 0)
     {

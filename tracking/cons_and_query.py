@@ -78,7 +78,7 @@ if __name__ == "__main__":
         },
     ]
 
-    RESULTS = {"QPS": {}, "Recall": {}}
+    RESULTS = dict()
 
     for experiment in experiments:
         tracking = experiment.get("tracking", False)

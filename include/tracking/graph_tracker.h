@@ -69,13 +69,11 @@ struct FullTrace
 {
   vector<TestData> tests;
   int total_edges;
-  vector<uint32_t> edge_counts;
 
   template<class Archive>
   void serialize(Archive& ar, const unsigned int version) {
     ar & tests;
     ar & total_edges;
-    ar & edge_counts;
   }
 };
 
@@ -92,7 +90,6 @@ class GraphTracker {
       static void VisitedNode(uint32_t id, float distance);
       static void SaveBestLNodes(diskann::NeighborPriorityQueue& best_l);
       static void SetK(int k);
-      static void AddEdgeCount(uint32_t edge_count);
 private:
   static int total_edges;
   static vector<QueryTrace> test_history;
@@ -105,7 +102,7 @@ private:
   static int k;
   static int converge_step;
   static bool is_tracking;
-  static vector<uint32_t> edge_counts;
+
 };
 
 #else

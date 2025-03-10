@@ -14,6 +14,7 @@
 #include "windows_customizations.h"
 #include "tag_uint128.h"
 #include "tracking/graph_tracker.h"
+#include "tracking/construction_tracker.h"
 
 #if defined(DISKANN_RELEASE_UNUSED_TCMALLOC_MEMORY_AT_CHECKPOINTS) && defined(DISKANN_BUILD)
 #include "gperftools/malloc_extension.h"
@@ -1048,6 +1049,8 @@ void Index<T, TagT, LabelT>::search_for_point_and_prune(int location, uint32_t L
         }
     }
 
+    ConstructionTrakcer::AddConstructionPathLength(pool.size());
+
     if (pruned_list.size() > 0)
     {
         throw diskann::ANNException("ERROR: non-empty pruned_list passed", -1, __FUNCSIG__, __FILE__, __LINE__);
@@ -1304,6 +1307,7 @@ template <typename T, typename TagT, typename LabelT> void Index<T, TagT, LabelT
 
     diskann::Timer link_timer;
 
+    ConstructionTracker::SetConstructionStep(0);
 #pragma omp parallel for schedule(dynamic, 2048)
     for (int64_t node_ctr = 0; node_ctr < (int64_t)(visit_order.size()); node_ctr++)
     {
@@ -1557,9 +1561,11 @@ void Index<T, TagT, LabelT>::build_with_data_populated(const std::vector<TagT> &
         max = std::max(max, pool.size());
         min = std::min(min, pool.size());
         total += pool.size();
+        ConstructionTracker::AddEdgeCount(pool.size());
         if (pool.size() < 2)
             cnt++;
     }
+    ConstructionTracker::EndConstruction();
     diskann::cout << "Index built with degree: max:" << max << "  avg:" << (float)total / (float)(_nd + _num_frozen_pts)
                   << "  min:" << min << "  count(deg<2):" << cnt << std::endl;
 

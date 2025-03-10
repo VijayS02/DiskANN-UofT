@@ -7,4 +7,7 @@ set(CMAKE_COMPILE_WARNING_AS_ERROR ON)
 if(TRACKING_ENABLED)
     add_executable(data_extractor data_extractor.cpp)
     target_link_libraries(data_extractor ${PROJECT_NAME} ${DISKANN_ASYNC_LIB} Boost::serialization nlohmann_json::nlohmann_json)
+
+    add_executable(construction_data_extractor construction_data_extractor.cpp)
+    target_link_libraries(construction_data_extractor ${PROJECT_NAME} ${DISKANN_ASYNC_LIB} Boost::serialization nlohmann_json::nlohmann_json)
 endif ()

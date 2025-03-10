@@ -90,9 +90,10 @@ int search_memory_index(diskann::Metric &metric, const std::string &index_path, 
                       .build();
 
     auto index_factory = diskann::IndexFactory(config);
+    #ifdef DISKANN_TRACKING_ENABLED
     GraphTracker::InitializeTracker(result_path_prefix, static_cast<int>(num_threads));
-
     GraphTracker::SetK(static_cast<int>(recall_at));
+    #endif
 
     auto index = index_factory.create_instance();
     index->load(index_path.c_str(), num_threads, *(std::max_element(Lvec.begin(), Lvec.end())));
@@ -164,8 +165,9 @@ int search_memory_index(diskann::Metric &metric, const std::string &index_path, 
 
         auto s = std::chrono::high_resolution_clock::now();
         omp_set_num_threads(num_threads);
+        #ifdef DISKANN_TRACKING_ENABLED
         GraphTracker::StartTest(L);
-
+        #endif
 #pragma omp parallel for schedule(dynamic, 1)
         for (int64_t i = 0; i < (int64_t)query_num; i++)
         {
@@ -214,11 +216,15 @@ int search_memory_index(diskann::Metric &metric, const std::string &index_path, 
             auto qe = std::chrono::high_resolution_clock::now();
             std::chrono::duration<double> diff = qe - qs;
             latency_stats[i] = (float)(diff.count() * 1000000);
+            #ifdef DISKANN_TRACKING_ENABLED
             GraphTracker::EndQuery();
+            #endif
         }
         std::chrono::duration<double> diff = std::chrono::high_resolution_clock::now() - s;
 
+        #ifdef DISKANN_TRACKING_ENABLED
         GraphTracker::EndTest();
+        #endif
 
         double displayed_qps = query_num / diff.count();
 
@@ -282,8 +288,9 @@ int search_memory_index(diskann::Metric &metric, const std::string &index_path, 
     }
 
     diskann::aligned_free(query);
-
+    #ifdef DISKANN_TRACKING_ENABLED
     GraphTracker::EndTracker();
+    #endif
     return best_recall >= fail_if_recall_below ? 0 : -1;
 }
 

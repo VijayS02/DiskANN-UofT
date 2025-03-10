@@ -26,12 +26,11 @@ int GraphTracker::step_num = 0;
 int GraphTracker::k = 0;
 int GraphTracker::converge_step = 0;
 bool GraphTracker::is_tracking = false;
-vector<uint32_t> GraphTracker::edge_counts = {};
 
-void saveToFile(const vector<TestData>& data, int total_edges, const vector<uint32_t>& edge_counts, const string& filename) {
+void saveToFile(const vector<TestData>& data, int total_edges, const string& filename) {
     cout << "Writing to file " << filename << endl;
     FullTrace trace = {
-    data, total_edges, edge_counts };
+    data, total_edges };
     // Open file for binary output
     ofstream ofs(filename, ios::binary);
     if (!ofs) {
@@ -49,12 +48,6 @@ void saveToFile(const vector<TestData>& data, int total_edges, const vector<uint
     cout << "Finished saving to " << filename << endl;
 }
 
-void GraphTracker::AddEdgeCount(const uint32_t edge_count)
-{
-    edge_counts.push_back(edge_count);
-}
-
-
 void GraphTracker::InitializeTracker(const string& filePath, int num_threads){
     if (num_threads != 1)
     {
@@ -67,7 +60,7 @@ void GraphTracker::InitializeTracker(const string& filePath, int num_threads){
 
 
 void GraphTracker::EndTracker(){
-    saveToFile(total_history, total_edges, edge_counts, file_path + "_raw_edges.bin");
+    saveToFile(total_history, total_edges, file_path + "_raw_edges.bin");
 }
 
 

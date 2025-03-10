@@ -164,7 +164,7 @@ public:
             for (const auto& [query_idx, count] : distributions[test_idx]) {
                 test_json[to_string(query_idx)] = count;
             }
-            string name = "L value: " + to_string(fullTrace.tests[test_idx].L);
+            string name = "L: " + to_string(fullTrace.tests[test_idx].L);
             output_json[name] = test_json;
         }
 
@@ -444,52 +444,6 @@ public:
 };
 
 
-class EdgeDistExtractor : public DataExtractor {
-public:
-    EdgeDistExtractor()
-    {
-        GraphProperties = json::parse(R"(
-        {
-            "title": "Edge Count Distribution",
-            "x_label": "Number of Edges",
-            "y_label": "Count",
-            "type": "scatter",
-            "x_log": false,
-            "y_log": false,
-            "sort_x": true,
-            "marker": "o"
-        }
-        )");
-    }
-
-    json extractData(const FullTrace& fullTrace) override {
-        json output_json;
-
-        uint32_t max = *std::max_element(fullTrace.edge_counts.begin(), fullTrace.edge_counts.end());
-
-        auto counts = vector<int> (max + 1, 0);
-
-        for (uint32_t i : fullTrace.edge_counts)
-        {
-            counts[static_cast<int>(i)]++;
-        }
-
-
-
-        // Convert to a dictionary (JSON object)
-        json counts_dict;
-        for (size_t i = 0; i < counts.size(); i++) {
-            if (counts[i] > 0) {  // Store only non-zero values
-                counts_dict[std::to_string(i)] = counts[i];  // JSON requires string keys
-            }
-        }
-
-        output_json["edge_counts"] = counts_dict;
-
-        return output_json;
-    }
-};
-
 
 // **Main function**
 int main(int argc, char **argv) {
@@ -515,7 +469,6 @@ int main(int argc, char **argv) {
     extractors["steps_dist"] = make_unique<ConvergenceStepExtractor>();
     extractors["latest_dist"] = make_unique<LatestPositionDistributionExtractor>();
     extractors["exact_conv"] = make_unique<ExactConvergenceStepExtractor>();
-    extractors["edge_dist"] = make_unique<EdgeDistExtractor>();
 
     // Process selected extractors
     for (int i = 3; i < argc; ++i) {

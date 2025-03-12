@@ -32,7 +32,7 @@ int main(int argc, char **argv)
     std::string connection_str = "tcp://localhost:5555";
     uint32_t num_threads, R, L, Lf, build_PQ_bytes;
     float alpha;
-    bool use_pq_build, use_opq;
+    bool use_pq_build, use_opq, saturate_graph;
 
     po::options_description desc{
         program_options_utils::make_program_description("build_memory_index", "Build a memory-based DiskANN index.")};
@@ -79,6 +79,9 @@ int main(int argc, char **argv)
         optional_configs.add_options()("tracking_addr", po::value<std::string>(&connection_str)->default_value("tcp://localhost:5555"),
                                        program_options_utils::LABEL_TYPE_DESCRIPTION);
 
+        optional_configs.add_options()("saturate_graph", po::bool_switch()->default_value(false),
+                                       program_options_utils::USE_OPQ);
+
         // Merge required and optional parameters
         desc.add(required_configs).add(optional_configs);
 
@@ -94,6 +97,7 @@ int main(int argc, char **argv)
         po::notify(vm);
         use_pq_build = (build_PQ_bytes > 0);
         use_opq = vm["use_opq"].as<bool>();
+        saturate_graph = vm["saturate_graph"].as<bool>();
     }
     catch (const std::exception &ex)
     {
@@ -133,7 +137,7 @@ int main(int argc, char **argv)
         auto index_build_params = diskann::IndexWriteParametersBuilder(L, R)
                                       .with_filter_list_size(Lf)
                                       .with_alpha(alpha)
-                                      .with_saturate_graph(false)
+                                      .with_saturate_graph(saturate_graph)
                                       .with_num_threads(num_threads)
                                       .build();
 

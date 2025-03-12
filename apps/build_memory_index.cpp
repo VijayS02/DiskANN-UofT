@@ -20,6 +20,9 @@
 #include "ann_exception.h"
 #include "index_factory.h"
 
+#include "tracking/tracking.h"
+#include "tracking/metrics.h"
+
 namespace po = boost::program_options;
 
 int main(int argc, char **argv)
@@ -28,6 +31,8 @@ int main(int argc, char **argv)
     uint32_t num_threads, R, L, Lf, build_PQ_bytes;
     float alpha;
     bool use_pq_build, use_opq;
+
+    MetricTracker::initialize("tcp://localhost:5555");
 
     po::options_description desc{
         program_options_utils::make_program_description("build_memory_index", "Build a memory-based DiskANN index.")};

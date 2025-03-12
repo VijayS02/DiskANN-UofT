@@ -27,9 +27,7 @@ namespace po = boost::program_options;
 
 int main(int argc, char **argv)
 {
-    std::string data_type, dist_fn, data_path, index_path_prefix, label_file, universal_label, label_type;
-
-    std::string connection_str = "tcp://localhost:5555";
+    std::string data_type, dist_fn, data_path, index_path_prefix, label_file, universal_label, label_type, connection_str;
     uint32_t num_threads, R, L, Lf, build_PQ_bytes;
     float alpha;
     bool use_pq_build, use_opq, saturate_graph;
@@ -85,8 +83,6 @@ int main(int argc, char **argv)
         // Merge required and optional parameters
         desc.add(required_configs).add(optional_configs);
 
-        MetricTracker::initialize(connection_str);
-
         po::variables_map vm;
         po::store(po::parse_command_line(argc, argv, desc), vm);
         if (vm.count("help"))
@@ -98,6 +94,7 @@ int main(int argc, char **argv)
         use_pq_build = (build_PQ_bytes > 0);
         use_opq = vm["use_opq"].as<bool>();
         saturate_graph = vm["saturate_graph"].as<bool>();
+        MetricTracker::initialize(connection_str);
     }
     catch (const std::exception &ex)
     {

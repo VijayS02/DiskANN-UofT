@@ -19,6 +19,7 @@ void MetricTracker::initialize(const std::string& connection_str)
 {
     if (!is_initialized)
     {
+        std::cout << "Initializing Metric Tracker with connection: " << connection_str << std::endl;
         try {
             // Set the linger option to ensure messages are delivered
             socket.set(zmq::sockopt::linger, 1000);  // 1 second linger period

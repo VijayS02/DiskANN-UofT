@@ -1555,6 +1555,8 @@ void Index<T, TagT, LabelT>::build_with_data_populated(const std::vector<TagT> &
         max = std::max(max, pool.size());
         min = std::min(min, pool.size());
         total += pool.size();
+
+        AddEdgeCount(pool.size());
         if (pool.size() < 2)
             cnt++;
     }

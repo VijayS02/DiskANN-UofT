@@ -10,12 +10,12 @@ socket.setsockopt(zmq.RCVTIMEO, 5000)  # Timeout after 5 seconds
 socket.setsockopt(zmq.LINGER, 0)       # Avoid hanging on close
 
 try:
-    socket.bind("tcp://*:5555")  # Allow external connections too
+    socket.bind("tcp://*:5556")  # Allow external connections too
 except zmq.error.ZMQError as e:
     print(f"Error binding to port: {e}")
     exit(1)
 
-print("Listening for messages on port 5555...")
+print("Listening for messages on port 5556...")
 
 while True:
     try:

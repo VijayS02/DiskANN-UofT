@@ -28,6 +28,10 @@ inline void EndConstruction()
     MetricTracker::Track("construction_end", true);
 }
 
+inline void AddEdgeCount(uint32_t number)
+{
+    MetricTracker::Track("add_edge_count", number);
+}
 
 
 

@@ -29,6 +29,13 @@ endif()
 
 set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake;${CMAKE_MODULE_PATH}")
 
+option(TRACKING_ENABLED "Enable the socket-based tracking instrumentation" OFF)
+
+if(TRACKING_ENABLED)
+    add_definitions(-DDISKANN_TRACKING_ENABLED)
+endif()
+
+
 # Install nuget packages for dependencies.
 if (MSVC)
     find_program(NUGET_EXE NAMES nuget)

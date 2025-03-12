@@ -13,5 +13,22 @@ inline void TestTrack(int number)
     std::cout << "Testing number " << number << std::endl;
 }
 
+inline void TrackConstructionPathLength(int number)
+{
+    MetricTracker::Track("construction_path", number);
+}
+
+inline void StartConstruction()
+{
+    MetricTracker::Track("construction_start", true);
+}
+
+inline void EndConstruction()
+{
+    MetricTracker::Track("construction_end", true);
+}
+
+
+
 
 #endif //METRICS_H

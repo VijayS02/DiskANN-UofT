@@ -23,6 +23,8 @@
 
 #include "index.h"
 
+#include <tracking/metrics.h>
+
 #define MAX_POINTS_FOR_USING_BITSET 10000000
 
 namespace diskann
@@ -1041,6 +1043,8 @@ void Index<T, TagT, LabelT>::search_for_point_and_prune(int location, uint32_t L
             i--;
         }
     }
+
+    TrackConstructionPathLength(pool.size());
 
     if (pruned_list.size() > 0)
     {

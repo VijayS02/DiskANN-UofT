@@ -4,7 +4,11 @@
 
 #ifndef TRACKING_H
 #define TRACKING_H
+#ifdef DISKANN_TRACKING_ENABLED
+
 #include "tracking/tracking.h"
+
+#include <utility>
 
 // Define static members
 zmq::context_t MetricTracker::context(1);
@@ -43,8 +47,7 @@ void MetricTracker::Track(const std::string& metric_name, nlohmann::json value)
     try {
         nlohmann::json payload;
         payload["metric_name"] = metric_name;
-        payload["value"] = value;
-        payload["type"] = value.type_name();
+        payload["value"] = std::move(value);
 
         std::string message = payload.dump();
         zmq::message_t zmq_msg(message.begin(), message.end());
@@ -54,5 +57,6 @@ void MetricTracker::Track(const std::string& metric_name, nlohmann::json value)
     }
 }
 
+#endif
 
 #endif //TRACKING_H

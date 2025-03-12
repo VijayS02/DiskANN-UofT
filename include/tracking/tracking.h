@@ -1,8 +1,9 @@
 #ifndef TRACKING_HPP
 #define TRACKING_HPP
-
-#include "zmq.hpp"
 #include "json.hpp"
+
+#ifdef DISKANN_TRACKING_ENABLED
+#include "zmq.hpp"
 #include <string>
 #include <iostream>
 
@@ -19,6 +20,18 @@ public:
   static void initialize(const std::string& connection_str);
   static void Track(const std::string& metric_name, nlohmann::json value);
 };
+#else
+class MetricTracker
+{
+private:
+
+  MetricTracker() {};
+
+public:
+  static void initialize(const std::string& connection_str) {};
+  static void Track(const std::string& metric_name, nlohmann::json value) {}
+};
+#endif
 
 
 #endif //TRACKING_HPP

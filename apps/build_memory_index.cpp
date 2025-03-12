@@ -28,11 +28,11 @@ namespace po = boost::program_options;
 int main(int argc, char **argv)
 {
     std::string data_type, dist_fn, data_path, index_path_prefix, label_file, universal_label, label_type;
+
+    std::string connection_str = "tcp://localhost:5555";
     uint32_t num_threads, R, L, Lf, build_PQ_bytes;
     float alpha;
     bool use_pq_build, use_opq;
-
-    MetricTracker::initialize("tcp://localhost:5555");
 
     po::options_description desc{
         program_options_utils::make_program_description("build_memory_index", "Build a memory-based DiskANN index.")};
@@ -76,8 +76,13 @@ int main(int argc, char **argv)
         optional_configs.add_options()("label_type", po::value<std::string>(&label_type)->default_value("uint"),
                                        program_options_utils::LABEL_TYPE_DESCRIPTION);
 
+        optional_configs.add_options()("tracking_addr", po::value<std::string>(&connection_str)->default_value("tcp://localhost:5555"),
+                                       program_options_utils::LABEL_TYPE_DESCRIPTION);
+
         // Merge required and optional parameters
         desc.add(required_configs).add(optional_configs);
+
+        MetricTracker::initialize(connection_str);
 
         po::variables_map vm;
         po::store(po::parse_command_line(argc, argv, desc), vm);
@@ -158,6 +163,7 @@ int main(int argc, char **argv)
         index->build(data_path, data_num, filter_params);
         index->save(index_path_prefix.c_str());
         index.reset();
+        EndConstruction();
         return 0;
     }
     catch (const std::exception &e)

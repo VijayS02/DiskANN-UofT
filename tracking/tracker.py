@@ -23,6 +23,6 @@ while True:
         data = json.loads(msg)  # Parse JSON
         print("Received:", data)
     except zmq.Again:
-        print("No message received, retrying...")
+        pass
     except json.JSONDecodeError:
         print("Invalid JSON format received, skipping...")

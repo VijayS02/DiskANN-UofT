@@ -1,7 +1,7 @@
 from matplotlib.axes import Axes
 
 from tracking.abstract_trackers import AbstractConstructionTracker
-from tracking.basic_metric_types import FrequencyTracker
+from tracking.basic_metric_types import FrequencyTracker, ChangeOverTimeTracker
 from tracking.tracker import AbstractTrackingRunner
 import subprocess
 import time
@@ -19,11 +19,12 @@ class ConstructionTrackingRunner(AbstractTrackingRunner):
         metric_name = data["metric_name"]
 
         if metric_name == "construction_start":
-            for metric in self.metric_handlers:
-                self.metric_handlers[metric].initialize_construction(data['value'])
+            for (tracker,metric) in self.iterate_trackers():
+                tracker.initialize_construction(data['value'])
         else:
             if metric_name in self.metric_handlers:
-                self.metric_handlers[metric_name].handle_metric_event(data['value'])
+                for tracker in self.metric_handlers[metric_name]:
+                    tracker.handle_metric_event(data['value'])
 
     def build_index(self, data_file, r=32, alpha=1.2, l_build=50,
                     print_out=False, tracking_port=5555, **kwargs):
@@ -103,6 +104,42 @@ class AddEdgeCountTracker(FrequencyTracker, AbstractConstructionTracker):
         return "add_edge_count"
 
 
+class ConstructionPathLengthTracker(ChangeOverTimeTracker, AbstractConstructionTracker):
+    def has_text_output(self):
+        return False
+
+    def print_text_output(self):
+        return None
+
+    def get_graph_props(self):
+        return {"x": "Step", "y": "Path Length", "title": "Path Length Over Steps" }
+
+    def initialize_construction(self, construction_params):
+        print("Construction Started!")
+        print(construction_params)
+
+
+    def get_metric_name(self) -> str:
+        return "add_construction_path_length"
+
+
+class ConstructionPathLengthFreqTracker(FrequencyTracker, AbstractConstructionTracker):
+    def has_text_output(self):
+        return False
+
+    def print_text_output(self):
+        return None
+
+    def get_graph_props(self):
+        return {"x": "Number of edges", "y": "Frequency", "title": "Construction Path Length Distribution", "ylog": True }
+
+    def initialize_construction(self, construction_params):
+        print("Construction Started!")
+        print(construction_params)
+
+
+    def get_metric_name(self) -> str:
+        return "add_construction_path_length"
 
 
 if __name__ == "__main__":
@@ -130,7 +167,7 @@ if __name__ == "__main__":
     # Paths to dataset files
     base_file = os.path.join(sift_folder, base_file_name)
 
-    tracker = ConstructionTrackingRunner(build_memory_index, port=5555, metric_handlers=[AddEdgeCountTracker()])
+    tracker = ConstructionTrackingRunner(build_memory_index, port=5555, metric_handlers=[AddEdgeCountTracker(), ConstructionPathLengthTracker(), ConstructionPathLengthFreqTracker()])
 
 
     experiments = [

@@ -15,18 +15,28 @@ class AbstractTrackingRunner:
     def __init__(self, port=5555, metric_handlers: List[AbstractConstructionTracker] = None):
         self.tracking_thread = None
         self.port = port
-        self.metric_handlers : Dict[str, AbstractConstructionTracker] = dict()
+        self.metric_handlers : Dict[str, List[AbstractConstructionTracker]] = dict()
         self.stop_tracking = False
         for metric_handler in metric_handlers:
-            self.metric_handlers[metric_handler.get_metric_name()] = metric_handler
+            self.metric_handlers.setdefault(metric_handler.get_metric_name(), []).append(metric_handler)
 
 
     @abstractmethod
     def handle_metric_event(self, data):
         pass
 
+
+    def iterate_trackers(self):
+        for metric in self.metric_handlers:
+            tracker_list = self.metric_handlers[metric]
+            for tracker in tracker_list:
+                yield tracker, metric
+
     def generate_graphs(self):
-        valid_trackers = [tracker for tracker in self.metric_handlers.values() if tracker.has_graph()]
+        valid_trackers = []
+        for (tracker, metric) in self.iterate_trackers():
+                if tracker.has_graph():
+                    valid_trackers.append(tracker)
 
         if not valid_trackers:
             print("No graphs to generate.")
@@ -40,15 +50,14 @@ class AbstractTrackingRunner:
 
         for ax, tracker in zip(axes, valid_trackers):
             tracker.generate_subplot(ax)
-            ax.set_title(tracker.get_metric_name())
 
         plt.tight_layout()
         plt.show()
 
 
     def end_experiment(self, title):
-        for metric in self.metric_handlers:
-            self.metric_handlers[metric].end_experiment(title)
+        for (tracker, metric) in self.iterate_trackers():
+            tracker.end_experiment(title)
 
 
 

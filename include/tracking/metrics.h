@@ -13,10 +13,6 @@ inline void TestTrack(int number)
     std::cout << "Testing number " << number << std::endl;
 }
 
-inline void TrackConstructionPathLength(int number)
-{
-    MetricTracker::Track("construction_path", number);
-}
 
 inline void StartConstruction()
 {
@@ -31,6 +27,11 @@ inline void EndConstruction()
 inline void AddEdgeCount(uint32_t number)
 {
     MetricTracker::Track("add_edge_count", number);
+}
+
+inline void AddConstructionPathLength(uint32_t number)
+{
+    MetricTracker::Track("add_construction_path_length", number);
 }
 
 

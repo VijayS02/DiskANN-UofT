@@ -71,6 +71,36 @@ class AverageDistancePerStep(ChangeOverTimeTracker, AbstractQueryTracker):
         return {"x": "Step", "y": "Average Distance", "title": "Average distance per step" }
 
 
+class MinDistanceConvergence(FrequencyTracker, AbstractQueryTracker):
+    def __init__(self):
+        super().__init__("visited_node",bins=50)
+        self.min_dist = 999999999999
+        self.index = 0
+        self.min_index = -1
+    def end_query(self, data):
+        self.add_data_point(self.min_index / self.index)
+        self.min_dist = 9999999999999
+        self.index = 0
+        self.min_index = -1
+
+
+    def has_text_output(self):
+        return False
+
+    def print_text_output(self):
+        return None
+
+    def handle_metric_event(self, metric_data):
+        dist = metric_data['distance']
+        if dist < self.min_dist:
+            self.min_dist = dist
+            self.min_index = self.index
+        self.index += 1
+
+
+    def get_graph_props(self):
+        return {"x": "Portion of steps taken to reach min", "y": "Freq", "title": "Steps to Closest Node Dist" }
+
 
 
 if __name__ == "__main__":
@@ -126,7 +156,8 @@ if __name__ == "__main__":
             print("Ground truth file already exists, skipping gt calculation.")
 
     tracker = QueryTrackerRunner(build_memory_index, search_memory_index,
-                                metric_handlers=[NodeVisitedDistribution(), QueryTimeDistribution(), AverageDistancePerStep()])
+                                metric_handlers=[NodeVisitedDistribution(), QueryTimeDistribution(), AverageDistancePerStep(),
+                                                 MinDistanceConvergence()])
 
 
     experiments = [

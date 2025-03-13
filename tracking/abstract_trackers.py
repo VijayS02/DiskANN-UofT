@@ -4,9 +4,11 @@ from matplotlib.axes import Axes
 
 
 class AbstractMetricTracker:
-    @abstractmethod
+    def __init__(self, metric: str):
+        self.metric = metric
+
     def get_metric_name(self) -> str:
-        pass
+        return self.metric
 
     @abstractmethod
     def handle_metric_event(self, metric_data):
@@ -36,14 +38,6 @@ class AbstractQueryTracker(AbstractMetricTracker):
 
     @abstractmethod
     def end_query(self):
-        pass
-
-    @abstractmethod
-    def handle_query_end(self):
-        pass
-
-    @abstractmethod
-    def handle_query_begin(self):
         pass
 
 

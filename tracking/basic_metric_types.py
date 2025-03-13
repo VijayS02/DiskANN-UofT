@@ -23,20 +23,17 @@ def set_graph_props(ax, graph_props):
 
 class FrequencyTracker(AbstractMetricTracker, ABC):
 
-    def __init__(self):
+    def __init__(self, metric: str):
+        super().__init__(metric)
         self.counts = dict()
         self.experiments = dict()
 
-
-    def get_value(self, raw_data):
-        return raw_data
 
     @abstractmethod
     def get_graph_props(self):
         pass
 
-    def handle_metric_event(self, metric_data):
-        data = self.get_value(metric_data)
+    def add_data_point(self, data):
         if data in self.counts:
             self.counts[data] += 1
         else:
@@ -70,7 +67,8 @@ class FrequencyTracker(AbstractMetricTracker, ABC):
 
 class ChangeOverTimeTracker(AbstractMetricTracker, ABC):
 
-    def __init__(self):
+    def __init__(self, metric: str):
+        super().__init__(metric)
         self.time_series = []
         self.experiments = dict()
 
@@ -78,7 +76,7 @@ class ChangeOverTimeTracker(AbstractMetricTracker, ABC):
     def get_graph_props(self):
         pass
 
-    def handle_metric_event(self, metric_data):
+    def add_data_point(self, metric_data):
         self.time_series.append(metric_data)
 
     def has_graph(self):

@@ -132,6 +132,9 @@ if __name__ == "__main__":
     base_file = os.path.join(sift_folder, base_file_name)
     gt_k = 100
 
+    print_out = False
+    tracking_port = 5555
+
     # Paths to dataset files
     query_file = os.path.join(sift_folder, query_file_name)
     gt_file = os.path.join(sift_folder, query_file + f".gt_{str(gt_k)}")
@@ -164,22 +167,104 @@ if __name__ == "__main__":
         {
             'r':32,
             'l_build': 50,
-            'alpha': 1.2
+            'alpha': 1.2,
+            "saturate_graph": True,
+        },
+        {
+            'r':32,
+            'l_build': 50,
+            'alpha': 1.5,
+            "saturate_graph": False,
         },
         {
             'r':64,
             'l_build': 50,
-            'alpha': 1.2
-        }
+            'alpha': 1.2,
+            "saturate_graph": False,
+        },
+        {
+            'r':64,
+            'l_build': 50,
+            'alpha': 1.5,
+            "saturate_graph": False,
+        },
     ]
+    l = 100
 
     for experiment in experiments:
         r = experiment['r']
         alpha = experiment['alpha']
         l_build=experiment['l_build']
-        title = f"R{str(r)}_L{str(l_build)}_A{str(alpha).replace(".", '-')}"
+        title = f"R{str(r)}_L{str(l_build)}_A{str(alpha).replace(".", '-')}{"_SAT" if experiment['saturate_graph'] else ""}"
 
-        tracker.search_index(title, sift_folder, base_file, query_file, gt_file,
-                             r=r, alpha=alpha, l_build=l_build, print_out=True)
+        experiment_folder = os.path.join(sift_folder, title)
+        os.makedirs(experiment_folder, exist_ok=True)
+
+        index_prefix = os.path.join(experiment_folder, "index")
+        result_path = os.path.join(experiment_folder, "res")
+
+
+        if not os.path.exists(index_prefix+".data"):
+            cmd2 = [
+                build_memory_index,
+                "--data_type", "float",
+                "--dist_fn", "l2",
+                "--data_path", base_file,
+                "--index_path_prefix", index_prefix,
+                "-R", str(r),
+                "--saturate_graph" if "saturate_graph" in experiments else "",
+                "-L", str(l_build),
+                "--alpha", str(alpha),
+                "--num_threads", "1",
+                "--tracking_addr", "NONE"
+            ]
+
+            result = subprocess.run(
+                cmd2,
+                stdout=None if print_out else subprocess.DEVNULL,
+                stderr=None if print_out else subprocess.DEVNULL,
+                text=True
+            )
+
+            if result.returncode != 0:
+                print(f"Error building index: {result.stderr}")
+                exit(1)
+        else:
+            print("Index exists")
+
+        def exec_func():
+            # Search command with all the arguments
+            command = [
+                search_memory_index,
+                "--data_type", "float",
+                "--dist_fn", "l2",
+                "--index_path_prefix", index_prefix,
+                "--query_file", query_file,
+                "--gt_file", gt_file,
+                "-K", "10",
+                "-L", str(l),
+                "--result_path", result_path,
+                "--num_threads", "1",
+                "--tracking_addr", f"tcp://localhost:{tracking_port}"
+            ]
+
+            print(f"Executing: {' '.join(command)}")
+
+            # Run the build command
+            process = subprocess.Popen(
+                command,
+                stdout=None if print_out else subprocess.DEVNULL,
+                stderr=None if print_out else subprocess.DEVNULL,
+                text=True
+            )
+
+            # Wait for completion
+            process.wait()
+
+            return {
+                "exit_code": process.returncode,
+            }
+
+        tracker.trace_program(title, exec_func, tracking_port=tracking_port)
 
     tracker.generate_graphs()

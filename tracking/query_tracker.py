@@ -6,29 +6,11 @@ import os
 
 from tracking.util import download_sift, create_build
 
-class DistanceDistributionTracker(FrequencyTracker, AbstractQueryTracker):
-    def __init__(self):
-        super().__init__("visited_node")
-    def end_query(self, _):
-        pass
-
-    def has_text_output(self):
-        return False
-
-    def print_text_output(self):
-        return None
-
-    def handle_metric_event(self, metric_data):
-        self.add_data_point(round(metric_data['distance'], -2))
-
-    def get_graph_props(self):
-        return {"x": "Distance", "y": "Frequency", "title": "Distance Frequency Graph" }
-
-
 class NodeVisitedDistribution(FrequencyTracker, AbstractQueryTracker):
     def __init__(self):
-        super().__init__("visited_node", bins=40)
+        super().__init__("visited_node")
         self.edges_visited = 0
+
     def end_query(self, _):
         self.add_data_point(self.edges_visited)
         self.edges_visited = 0
@@ -64,6 +46,29 @@ class QueryTimeDistribution(FrequencyTracker, AbstractQueryTracker):
 
     def get_graph_props(self):
         return {"x": "Query Time (ms)", "y": "Frequency", "title": "Query Time Distribution" }
+
+class AverageDistancePerStep(ChangeOverTimeTracker, AbstractQueryTracker):
+    def __init__(self):
+        super().__init__("visited_node", average=True)
+        self.pos = 0
+        self.store = []
+    def end_query(self, data):
+        self.pos = 0
+
+    def has_text_output(self):
+        return False
+
+    def print_text_output(self):
+        return None
+
+    def handle_metric_event(self, metric_data):
+        val = metric_data['distance'] / self.experiment_info['queries']
+        self.add_data_point(val, i=self.pos)
+        self.pos += 1
+
+
+    def get_graph_props(self):
+        return {"x": "Step", "y": "Average Distance", "title": "Average distance per step" }
 
 
 
@@ -121,7 +126,7 @@ if __name__ == "__main__":
             print("Ground truth file already exists, skipping gt calculation.")
 
     tracker = QueryTrackerRunner(build_memory_index, search_memory_index,
-                                metric_handlers=[NodeVisitedDistribution(), QueryTimeDistribution()])
+                                metric_handlers=[NodeVisitedDistribution(), QueryTimeDistribution(), AverageDistancePerStep()])
 
 
     experiments = [

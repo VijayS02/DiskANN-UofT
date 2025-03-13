@@ -57,7 +57,7 @@ class FrequencyTracker(AbstractMetricTracker, ABC):
             max_value = max(max_value, max(self.experiments[title]))
 
         # print(min_value, max_value)
-        bins = np.linspace(min_value, max_value, min(self.bins, max_value-min_value))
+        bins = np.linspace(min_value, max_value, self.bins)
 
         for title in self.experiments:
             data = self.experiments[title]
@@ -69,17 +69,30 @@ class FrequencyTracker(AbstractMetricTracker, ABC):
 
 class ChangeOverTimeTracker(AbstractMetricTracker, ABC):
 
-    def __init__(self, metric: str):
+    def __init__(self, metric: str, average=False):
         super().__init__(metric)
         self.time_series = []
         self.experiments = dict()
+        self.average = average
+        self.counts = []
 
     @abstractmethod
     def get_graph_props(self):
         pass
 
-    def add_data_point(self, metric_data):
-        self.time_series.append(metric_data)
+    def add_data_point(self, metric_data, i=-1):
+        if i == -1:
+            self.time_series.append(metric_data)
+            if self.average:
+                self.counts.append(1)
+        elif i >= len(self.time_series):
+            self.time_series.append(metric_data)
+            if self.average:
+                self.counts.append(1)
+        else:
+            self.time_series[i] = self.time_series[i] + metric_data
+            if self.average:
+                self.counts[i] += 1
 
     def has_graph(self):
         return True
@@ -88,9 +101,13 @@ class ChangeOverTimeTracker(AbstractMetricTracker, ABC):
         if not self.time_series:
             self.experiments[title] = None
 
-
         x_values =  np.arange(len(self.time_series))
-        y_values = self.time_series
+
+        if self.average:
+            y_values = [self.time_series[i] / self.counts[i] if self.counts[i] != 0 else 0
+                        for i in range(len(self.time_series))]
+        else:
+             y_values = self.time_series
 
         print(len(self.time_series))
         self.experiments[title] = (x_values,y_values)

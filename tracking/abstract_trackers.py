@@ -36,6 +36,13 @@ class AbstractMetricTracker:
 
 class AbstractQueryTracker(AbstractMetricTracker):
 
+    def __init__(self, metric="NONE"):
+        super().__init__(metric=metric)
+        self.experiment_info = dict()
+
+    def configure_experiment_stats(self, data):
+        self.experiment_info = data
+
     @abstractmethod
     def end_query(self, data):
         pass

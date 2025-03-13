@@ -53,7 +53,7 @@ class AbstractTrackingRunner:
         for ax, tracker in zip(axes, valid_trackers):
             tracker.generate_subplot(ax)
 
-        plt.tight_layout()
+        plt.tight_layout(pad=1.4)
         plt.show()
 
 
@@ -190,14 +190,24 @@ class QueryTrackerRunner(AbstractTrackingRunner):
     def __init__(self, build_memory_location, search_location, port=5556, metric_handlers: List[AbstractQueryTracker]=None):
         self.build_memory_location = build_memory_location
         self.search_exec = search_location
+        self.experiment_stats = dict()
+        self.completed_queries = 0
         super().__init__(port=port, metric_handlers=metric_handlers)
 
     def handle_metric_event(self, data):
         metric_name = data["metric_name"]
+        # print(data)
 
         if metric_name == "end_query":
+            self.completed_queries += 1
+            # if self.completed_queries / self.experiment_stats['queries']:
             for (tracker, metric) in self.iterate_trackers():
                 tracker.end_query(data['value'])
+        elif metric_name == "configure_experiment":
+            self.completed_queries = 0
+            self.experiment_stats = data['value']
+            for (tracker, metric) in self.iterate_trackers():
+                tracker.configure_experiment_stats(data['value'])
         else:
             if metric_name in self.metric_handlers:
                 for tracker in self.metric_handlers[metric_name]:

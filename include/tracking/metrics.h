@@ -52,6 +52,15 @@ inline void VisitedNode(uint32_t nodeId, float distance)
     MetricTracker::Track("visited_node", jsonData);
 }
 
+inline void ConfigureExperimentQuery(size_t queries)
+{
+    const nlohmann::json jsonData = {
+        {"queries", queries}
+    };
+
+    MetricTracker::Track("configure_experiment", jsonData);
+}
+
 
 
 #endif //METRICS_H

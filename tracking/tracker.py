@@ -195,9 +195,9 @@ class QueryTrackerRunner(AbstractTrackingRunner):
     def handle_metric_event(self, data):
         metric_name = data["metric_name"]
 
-        if metric_name == "query_end":
+        if metric_name == "end_query":
             for (tracker, metric) in self.iterate_trackers():
-                tracker.end_query()
+                tracker.end_query(data['value'])
         else:
             if metric_name in self.metric_handlers:
                 for tracker in self.metric_handlers[metric_name]:

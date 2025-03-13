@@ -37,7 +37,7 @@ class AbstractMetricTracker:
 class AbstractQueryTracker(AbstractMetricTracker):
 
     @abstractmethod
-    def end_query(self):
+    def end_query(self, data):
         pass
 
 

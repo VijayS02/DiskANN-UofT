@@ -1,12 +1,7 @@
-from typing import List
-
-from matplotlib.axes import Axes
-
 from tracking.abstract_trackers import AbstractConstructionTracker, AbstractQueryTracker
 from tracking.basic_metric_types import FrequencyTracker, ChangeOverTimeTracker
 from tracking.tracker import AbstractTrackingRunner, QueryTrackerRunner
 import subprocess
-import time
 import os
 
 from tracking.util import download_sift, create_build
@@ -14,7 +9,7 @@ from tracking.util import download_sift, create_build
 class DistanceDistributionTracker(FrequencyTracker, AbstractQueryTracker):
     def __init__(self):
         super().__init__("visited_node")
-    def end_query(self):
+    def end_query(self, _):
         pass
 
     def has_text_output(self):
@@ -28,6 +23,48 @@ class DistanceDistributionTracker(FrequencyTracker, AbstractQueryTracker):
 
     def get_graph_props(self):
         return {"x": "Distance", "y": "Frequency", "title": "Distance Frequency Graph" }
+
+
+class NodeVisitedDistribution(FrequencyTracker, AbstractQueryTracker):
+    def __init__(self):
+        super().__init__("visited_node", bins=40)
+        self.edges_visited = 0
+    def end_query(self, _):
+        self.add_data_point(self.edges_visited)
+        self.edges_visited = 0
+
+    def has_text_output(self):
+        return False
+
+    def print_text_output(self):
+        return None
+
+    def handle_metric_event(self, metric_data):
+        self.edges_visited += 1
+
+    def get_graph_props(self):
+        return {"x": "Number of Nodes Visited In Query", "y": "Frequency", "title": "Nodes Visited Distribution",
+                'ylog': True }
+
+class QueryTimeDistribution(FrequencyTracker, AbstractQueryTracker):
+    def __init__(self):
+        super().__init__("NONE")
+        self.edges_visited = 0
+    def end_query(self, data):
+        self.add_data_point(data['querytime'])
+
+    def has_text_output(self):
+        return False
+
+    def print_text_output(self):
+        return None
+
+    def handle_metric_event(self, metric_data):
+        pass
+
+    def get_graph_props(self):
+        return {"x": "Query Time (ms)", "y": "Frequency", "title": "Query Time Distribution" }
+
 
 
 
@@ -84,7 +121,7 @@ if __name__ == "__main__":
             print("Ground truth file already exists, skipping gt calculation.")
 
     tracker = QueryTrackerRunner(build_memory_index, search_memory_index,
-                                metric_handlers=[DistanceDistributionTracker()])
+                                metric_handlers=[NodeVisitedDistribution(), QueryTimeDistribution()])
 
 
     experiments = [
@@ -104,7 +141,7 @@ if __name__ == "__main__":
         r = experiment['r']
         alpha = experiment['alpha']
         l_build=experiment['l_build']
-        title = f"R{str(r)}_L{str(l_build)}_A{str(alpha)}"
+        title = f"R{str(r)}_L{str(l_build)}_A{str(alpha).replace(".", '-')}"
 
         tracker.search_index(title, sift_folder, base_file, query_file, gt_file,
                              r=r, alpha=alpha, l_build=l_build, print_out=True)

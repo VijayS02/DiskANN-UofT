@@ -23,6 +23,7 @@
 #include "program_options_utils.hpp"
 #include "index_factory.h"
 
+#include <tracking/metrics.h>
 #include <tracking/tracking.h>
 
 namespace po = boost::program_options;
@@ -209,6 +210,7 @@ int search_memory_index(diskann::Metric &metric, const std::string &index_path, 
             auto qe = std::chrono::high_resolution_clock::now();
             std::chrono::duration<double> diff = qe - qs;
             latency_stats[i] = (float)(diff.count() * 1000000);
+            EndQuery(latency_stats[i]);
         }
         std::chrono::duration<double> diff = std::chrono::high_resolution_clock::now() - s;
 
@@ -251,6 +253,7 @@ int search_memory_index(diskann::Metric &metric, const std::string &index_path, 
             best_recall = std::max(recall, best_recall);
         }
         std::cout << std::endl;
+
     }
 
     std::cout << "Done searching. Now saving results " << std::endl;

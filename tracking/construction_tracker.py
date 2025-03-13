@@ -29,33 +29,6 @@ class AddEdgeCountTracker(FrequencyTracker, AbstractConstructionTracker):
         print("Construction Started!")
         print(construction_params)
 
-
-class ConstructionPathLengthTracker(ChangeOverTimeTracker, AbstractConstructionTracker):
-    def __init__(self):
-        super().__init__("add_construction_path_length")
-
-    def has_text_output(self):
-        return False
-
-    def print_text_output(self):
-        return None
-
-    def handle_metric_event(self, metric_data):
-        self.add_data_point(metric_data)
-
-
-    def get_graph_props(self):
-        return {"x": "Step", "y": "Path Length", "title": "Path Length Over Steps" }
-
-    def initialize_construction(self, construction_params):
-        print("Construction Started!")
-        print(construction_params)
-
-
-    def get_metric_name(self) -> str:
-        return "add_construction_path_length"
-
-
 class ConstructionPathLengthFreqTracker(FrequencyTracker, AbstractConstructionTracker):
     def __init__(self):
         super().__init__("add_construction_path_length")
@@ -106,8 +79,7 @@ if __name__ == "__main__":
     base_file = os.path.join(sift_folder, base_file_name)
 
     tracker = ConstructionTrackingRunner(build_memory_index,
-                                         metric_handlers=[AddEdgeCountTracker(), ConstructionPathLengthTracker(),
-                                                          ConstructionPathLengthFreqTracker()])
+                                         metric_handlers=[AddEdgeCountTracker(), ConstructionPathLengthFreqTracker()])
 
 
     experiments = [

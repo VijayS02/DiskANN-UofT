@@ -34,9 +34,12 @@ inline void AddConstructionPathLength(uint32_t number)
     MetricTracker::Track("add_construction_path_length", number);
 }
 
-inline void EndQuery()
+inline void EndQuery(float query_time)
 {
-    MetricTracker::Track("end_query", true);
+    const nlohmann::json jsonData = {
+        {"querytime", query_time},
+    };
+    MetricTracker::Track("end_query", jsonData);
 }
 
 inline void VisitedNode(uint32_t nodeId, float distance)
@@ -48,7 +51,6 @@ inline void VisitedNode(uint32_t nodeId, float distance)
 
     MetricTracker::Track("visited_node", jsonData);
 }
-
 
 
 

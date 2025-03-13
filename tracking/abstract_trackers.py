@@ -20,12 +20,17 @@ class AbstractMetricTracker:
     def generate_subplot(self,ax: Axes):
         pass
 
+    @abstractmethod
     def has_text_output(self):
         pass
 
+    @abstractmethod
     def print_text_output(self):
         pass
 
+    @abstractmethod
+    def end_experiment(self, title):
+        pass
 
 class AbstractQueryTracker(AbstractMetricTracker):
     @abstractmethod

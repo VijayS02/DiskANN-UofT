@@ -25,9 +25,13 @@ class ConstructionTrackingRunner(AbstractTrackingRunner):
             if metric_name in self.metric_handlers:
                 self.metric_handlers[metric_name].handle_metric_event(data['value'])
 
-    def build_index(self, data_file, index_prefix_path, r=32, alpha=1.2, l_build=50,
+    def build_index(self, data_file, r=32, alpha=1.2, l_build=50,
                     print_out=False, tracking_port=5555, **kwargs):
         """Build index and track metrics via ZMQ"""
+
+        title = f"R{str(r)}_L{str(l_build)}_A{str(alpha)}"
+        index_path = os.path.join(sift_folder, f"index_{base_file_name.replace('.fbin', '')}_R{str(r)}_L{str(l_build)}_A{str(alpha)}")
+
         # Start tracking server first
         self.start_tracking_server(port=tracking_port)
 
@@ -37,7 +41,7 @@ class ConstructionTrackingRunner(AbstractTrackingRunner):
             "--data_type", "float",
             "--dist_fn", "l2",
             "--data_path", data_file,
-            "--index_path_prefix", index_prefix_path,
+            "--index_path_prefix", index_path,
             "-R", str(r),
             "-L", str(l_build),
             "--alpha", str(alpha),
@@ -72,6 +76,7 @@ class ConstructionTrackingRunner(AbstractTrackingRunner):
             # Stop the tracking server
             self.stop_tracking_server()
 
+        self.end_experiment(title)
 
         return {
             "exit_code": process.returncode,
@@ -97,9 +102,7 @@ class AddEdgeCountTracker(FrequencyTracker, AbstractConstructionTracker):
 if __name__ == "__main__":
     parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
     print("BASE directory:", parent_dir)
-    r = 32
-    l_build = 50
-    alpha = 1.2
+
 
     build_dir = os.path.join(parent_dir, "build")
     data_folder = os.path.join(build_dir, "data")
@@ -123,9 +126,25 @@ if __name__ == "__main__":
 
     tracker = ConstructionTrackingRunner(build_memory_index, port=5555, metric_handlers=[AddEdgeCountTracker()])
 
-    index_path = os.path.join(sift_folder, f"index_{base_file_name.replace('.fbin', '')}_R{str(r)}_L{str(l_build)}_A{str(alpha)}")
 
+    experiments = [
+        {
+            'r':32,
+            'l_build': 50,
+            'alpha': 1.2
+        },
+        {
+            'r':64,
+            'l_build': 50,
+            'alpha': 1.2
+        }
+    ]
 
-    tracker.build_index(base_file,index_path, r=r, alpha=alpha, l_build=l_build, print_out=True)
+    for experiment in experiments:
+        r = experiment['r']
+        alpha = experiment['alpha']
+        l_build=experiment['l_build']
+
+        tracker.build_index(base_file, r=r, alpha=alpha, l_build=l_build, print_out=True)
 
     tracker.generate_graphs()

@@ -7,6 +7,7 @@ class FrequencyTracker(AbstractMetricTracker, ABC):
 
     def __init__(self):
         self.counts = dict()
+        self.experiments = dict()
 
     @abstractmethod
     def get_graph_props(self):
@@ -21,18 +22,24 @@ class FrequencyTracker(AbstractMetricTracker, ABC):
     def has_graph(self):
         return True
 
-    def generate_subplot(self,ax):
-        """Plots the edge count occurrences as a bar chart."""
+    def end_experiment(self, title):
         if not self.counts:
-            ax.text(0.5, 0.5, "No Data", fontsize=12, ha='center', va='center')
-            return
+            self.experiments[title] = None
 
-            # Sort data by keys (edge count values)
+
         sorted_items = sorted(self.counts.items())
         x_values, y_values = zip(*sorted_items)  # Unpacking sorted keys and counts
 
-        ax.bar(x_values, y_values, color='skyblue', edgecolor='black')
+        self.experiments[title] = (x_values,y_values)
 
+    def generate_subplot(self,ax):
+        """Plots the edge count occurrences as a bar chart."""
+
+        for title in self.experiments:
+            (x,y) = self.experiments[title]
+            ax.bar(x, y, edgecolor='black', label=title, alpha=0.5)
+
+        ax.legend()
         labels = self.get_graph_props()
         ax.set_xlabel(labels['x'])
         ax.set_ylabel(labels['y'])

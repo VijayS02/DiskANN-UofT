@@ -45,6 +45,13 @@ class AbstractTrackingRunner:
         plt.tight_layout()
         plt.show()
 
+
+    def end_experiment(self, title):
+        for metric in self.metric_handlers:
+            self.metric_handlers[metric].end_experiment(title)
+
+
+
     def start_tracking_server(self, port=5556):
         """Start a ZMQ server in a separate thread to collect metrics"""
         self.stop_tracking = False

@@ -85,6 +85,12 @@ class ConstructionTrackingRunner(AbstractTrackingRunner):
 
 
 class AddEdgeCountTracker(FrequencyTracker, AbstractConstructionTracker):
+    def has_text_output(self):
+        return False
+
+    def print_text_output(self):
+        return None
+
     def get_graph_props(self):
         return {"x": "Edge Counts", "y": "Frequency", "title": "Edge Count Distribution" }
 

@@ -1,4 +1,7 @@
+from matplotlib.axes import Axes
+
 from tracking.abstract_trackers import AbstractConstructionTracker
+from tracking.basic_metric_types import FrequencyTracker
 from tracking.tracker import AbstractTrackingRunner
 import subprocess
 import time
@@ -76,17 +79,19 @@ class ConstructionTrackingRunner(AbstractTrackingRunner):
 
 
 
-class AddEdgeCountTracker(AbstractConstructionTracker):
-    def __init__(self):
-        self.tracked = []
+class AddEdgeCountTracker(FrequencyTracker, AbstractConstructionTracker):
+    def get_graph_props(self):
+        return {"x": "Edge Counts", "y": "Frequency", "title": "Edge Count Distribution" }
+
     def initialize_construction(self, construction_params):
+        print("Construction Started!")
         print(construction_params)
 
-    def handle_metric_event(self, metric_data):
-        self.tracked.append(metric_data)
 
     def get_metric_name(self) -> str:
         return "add_edge_count"
+
+
 
 
 if __name__ == "__main__":
@@ -122,3 +127,5 @@ if __name__ == "__main__":
 
 
     tracker.build_index(base_file,index_path, r=r, alpha=alpha, l_build=l_build, print_out=True)
+
+    tracker.generate_graphs()

@@ -125,6 +125,7 @@ int main(int argc, char **argv)
 
     try
     {
+        StartConstruction();
         diskann::cout << "Starting index build with R: " << R << "  Lbuild: " << L << "  alpha: " << alpha
                       << "  #threads: " << num_threads << std::endl;
 

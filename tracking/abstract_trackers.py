@@ -1,5 +1,7 @@
 from abc import abstractclassmethod, abstractmethod
 
+from matplotlib.axes import Axes
+
 
 class AbstractMetricTracker:
     @abstractmethod
@@ -11,7 +13,17 @@ class AbstractMetricTracker:
         pass
 
     @abstractmethod
-    def plot_resulting_data(self):
+    def has_graph(self):
+        pass
+
+    @abstractmethod
+    def generate_subplot(self,ax: Axes):
+        pass
+
+    def has_text_output(self):
+        pass
+
+    def print_text_output(self):
         pass
 
 

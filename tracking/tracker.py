@@ -7,6 +7,8 @@ import json
 from tracking.abstract_trackers import AbstractConstructionTracker
 import threading
 
+import matplotlib.pyplot as plt
+
 
 class AbstractTrackingRunner:
 
@@ -22,6 +24,26 @@ class AbstractTrackingRunner:
     @abstractmethod
     def handle_metric_event(self, data):
         pass
+
+    def generate_graphs(self):
+        valid_trackers = [tracker for tracker in self.metric_handlers.values() if tracker.has_graph()]
+
+        if not valid_trackers:
+            print("No graphs to generate.")
+            return
+
+        num_trackers = len(valid_trackers)
+        fig, axes = plt.subplots(num_trackers, 1, figsize=(8, 4 * num_trackers))
+
+        if num_trackers == 1:
+            axes = [axes]  # Ensure it's iterable when there's only one subplot
+
+        for ax, tracker in zip(axes, valid_trackers):
+            tracker.generate_subplot(ax)
+            ax.set_title(tracker.get_metric_name())
+
+        plt.tight_layout()
+        plt.show()
 
     def start_tracking_server(self, port=5556):
         """Start a ZMQ server in a separate thread to collect metrics"""

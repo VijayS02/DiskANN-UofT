@@ -2,6 +2,7 @@ import time
 from abc import abstractmethod
 from typing import List, Dict
 
+import numpy as np
 import zmq
 import json
 from tracking.abstract_trackers import AbstractConstructionTracker, AbstractMetricTracker, AbstractQueryTracker
@@ -35,33 +36,35 @@ class AbstractTrackingRunner:
                 yield tracker, metric
 
     def generate_graphs(self):
-        valid_trackers = []
-        for (tracker, metric) in self.iterate_trackers():
-                if tracker.has_graph():
-                    valid_trackers.append(tracker)
-
+        valid_trackers = [tracker for tracker, _ in self.iterate_trackers() if tracker.has_graph()]
         if not valid_trackers:
             print("No graphs to generate.")
             return
 
         num_trackers = len(valid_trackers)
-        fig, axes = plt.subplots(num_trackers, 1, figsize=(8, 4 * num_trackers))
 
-        if num_trackers == 1:
-            axes = [axes]  # Ensure it's iterable when there's only one subplot
+        # Compute the closest square layout (rows x cols)
+        ncols = int(np.ceil(np.sqrt(num_trackers)))  # Columns should be sqrt of count
+        nrows = int(np.ceil(num_trackers / ncols))  # Compute rows to fit all plots
+
+        fig, axes = plt.subplots(nrows, ncols, figsize=(4 * ncols, 4 * nrows))
+
+        # Flatten axes array for easier iteration (handles cases where ncols > 1)
+        axes = np.array(axes).reshape(-1)  # Reshape in case of single row or column
 
         for ax, tracker in zip(axes, valid_trackers):
             tracker.generate_subplot(ax)
 
-        plt.tight_layout(pad=1.4)
-        plt.show()
+        # Hide unused subplots if any
+        for ax in axes[num_trackers:]:
+            ax.axis("off")
 
+        plt.tight_layout()
+        plt.show()
 
     def end_experiment(self, title):
         for (tracker, metric) in self.iterate_trackers():
             tracker.end_experiment(title)
-
-
 
     def start_tracking_server(self, port=5556):
         """Start a ZMQ server in a separate thread to collect metrics"""

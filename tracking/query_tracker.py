@@ -62,7 +62,7 @@ class AverageDistancePerStep(ChangeOverTimeTracker, AbstractQueryTracker):
         return None
 
     def handle_metric_event(self, metric_data):
-        val = metric_data['distance'] / self.experiment_info['queries']
+        val = metric_data['distance']
         self.add_data_point(val, i=self.pos)
         self.pos += 1
 

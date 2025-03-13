@@ -23,6 +23,8 @@
 #include "program_options_utils.hpp"
 #include "index_factory.h"
 
+#include <tracking/tracking.h>
+
 namespace po = boost::program_options;
 
 template <typename T, typename LabelT = uint32_t>
@@ -278,7 +280,7 @@ int search_memory_index(diskann::Metric &metric, const std::string &index_path, 
 int main(int argc, char **argv)
 {
     std::string data_type, dist_fn, index_path_prefix, result_path, query_file, gt_file, filter_label, label_type,
-        query_filters_file;
+        query_filters_file, connection_str;
     uint32_t num_threads, K;
     std::vector<uint32_t> Lvec;
     bool print_all_recalls, dynamic, tags, show_qps_per_thread;
@@ -332,6 +334,9 @@ int main(int argc, char **argv)
                                        po::value<float>(&fail_if_recall_below)->default_value(0.0f),
                                        program_options_utils::FAIL_IF_RECALL_BELOW);
 
+        optional_configs.add_options()("tracking_addr", po::value<std::string>(&connection_str)->default_value("tcp://localhost:5555"),
+                                       program_options_utils::LABEL_TYPE_DESCRIPTION);
+
         // Output controls
         po::options_description output_controls("Output controls");
         output_controls.add_options()("print_all_recalls", po::bool_switch(&print_all_recalls),
@@ -340,6 +345,7 @@ int main(int argc, char **argv)
         output_controls.add_options()("print_qps_per_thread", po::bool_switch(&show_qps_per_thread),
                                       "Print overall QPS divided by the number of threads in "
                                       "the output table");
+
 
         // Merge required and optional parameters
         desc.add(required_configs).add(optional_configs).add(output_controls);
@@ -352,6 +358,7 @@ int main(int argc, char **argv)
             return 0;
         }
         po::notify(vm);
+        MetricTracker::initialize(connection_str);
     }
     catch (const std::exception &ex)
     {

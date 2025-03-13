@@ -19,6 +19,11 @@ void MetricTracker::initialize(const std::string& connection_str)
 {
     if (!is_initialized)
     {
+        if (connection_str == "NONE")
+        {
+            std::cout << "TRACKING DISABLED." << std::endl;
+            return;
+        }
         std::cout << "Initializing Metric Tracker with connection: " << connection_str << std::endl;
         try {
             // Set the linger option to ensure messages are delivered
@@ -41,7 +46,7 @@ void MetricTracker::Track(const std::string& metric_name, nlohmann::json value)
 {
     if (!is_initialized)
     {
-        std::cerr << "Tracking not initialized" << std::endl;
+        // std::cerr << "Tracking not initialized" << std::endl;
         return;
     }
 

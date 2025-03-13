@@ -33,8 +33,9 @@ class AbstractMetricTracker:
         pass
 
 class AbstractQueryTracker(AbstractMetricTracker):
+
     @abstractmethod
-    def initialize_query(self, search_params):
+    def end_query(self):
         pass
 
     @abstractmethod

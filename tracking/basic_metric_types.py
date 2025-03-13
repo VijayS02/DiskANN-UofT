@@ -27,15 +27,20 @@ class FrequencyTracker(AbstractMetricTracker, ABC):
         self.counts = dict()
         self.experiments = dict()
 
+
+    def get_value(self, raw_data):
+        return raw_data
+
     @abstractmethod
     def get_graph_props(self):
         pass
 
     def handle_metric_event(self, metric_data):
-        if metric_data in self.counts:
-            self.counts[metric_data] += 1
+        data = self.get_value(metric_data)
+        if data in self.counts:
+            self.counts[data] += 1
         else:
-            self.counts[metric_data] = 1
+            self.counts[data] = 1
 
     def has_graph(self):
         return True

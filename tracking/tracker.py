@@ -4,7 +4,7 @@ from typing import List, Dict
 
 import zmq
 import json
-from tracking.abstract_trackers import AbstractConstructionTracker
+from tracking.abstract_trackers import AbstractConstructionTracker, AbstractMetricTracker
 import threading
 
 import matplotlib.pyplot as plt
@@ -12,10 +12,10 @@ import matplotlib.pyplot as plt
 
 class AbstractTrackingRunner:
 
-    def __init__(self, port=5555, metric_handlers: List[AbstractConstructionTracker] = None):
+    def __init__(self, port=5555, metric_handlers: List[AbstractMetricTracker] = None):
         self.tracking_thread = None
         self.port = port
-        self.metric_handlers : Dict[str, List[AbstractConstructionTracker]] = dict()
+        self.metric_handlers : Dict[str, List[AbstractMetricTracker]] = dict()
         self.stop_tracking = False
         for metric_handler in metric_handlers:
             self.metric_handlers.setdefault(metric_handler.get_metric_name(), []).append(metric_handler)

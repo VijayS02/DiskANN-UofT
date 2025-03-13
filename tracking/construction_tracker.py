@@ -167,7 +167,7 @@ if __name__ == "__main__":
     # Paths to dataset files
     base_file = os.path.join(sift_folder, base_file_name)
 
-    tracker = ConstructionTrackingRunner(build_memory_index, port=5555, metric_handlers=[AddEdgeCountTracker(), ConstructionPathLengthTracker(), ConstructionPathLengthFreqTracker()])
+    tracker = ConstructionTrackingRunner(build_memory_index, metric_handlers=[AddEdgeCountTracker(), ConstructionPathLengthTracker(), ConstructionPathLengthFreqTracker()])
 
 
     experiments = [

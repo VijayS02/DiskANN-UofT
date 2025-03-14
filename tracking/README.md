@@ -1,5 +1,11 @@
 # DiskANN Tracker
 
+## Requirements
+
+ - [Libmzq](https://github.com/zeromq/libzmq)
+ - Linux
+
+
 ## Description
 
 This branch of DiskANN contains tracking code that traces both `search_memory_index` and `build_memory_index`.

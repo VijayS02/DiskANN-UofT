@@ -1,0 +1,4 @@
+matplotlib
+tarfile
+re
+zmq

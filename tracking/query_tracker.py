@@ -132,7 +132,7 @@ if __name__ == "__main__":
     base_file = os.path.join(sift_folder, base_file_name)
     gt_k = 100
 
-    print_out = False
+    print_out = True
     tracking_port = 5555
 
     # Paths to dataset files

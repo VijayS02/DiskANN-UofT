@@ -22,7 +22,19 @@ def set_graph_props(ax, graph_props):
 
 
 class FrequencyTracker(AbstractMetricTracker, ABC):
+    """
+    Tracks the frequency distribution of a metric over multiple experiments.
 
+    The `FrequencyTracker` class stores data points related to a specific metric and allows visualization
+    of their frequency distribution across multiple experiments. It supports histogram-based visualization
+    using Matplotlib and ensures consistent binning across experiments.
+
+    Attributes:
+        counts (List[float]): A list storing the frequency data points for the current experiment.
+        experiments (Dict[str, List[float]]): A dictionary storing frequency data for multiple experiments,
+            where keys are experiment titles and values are lists of data points.
+        bins (int): Number of bins to use when plotting histograms.
+    """
     def __init__(self, metric: str, bins=100):
         super().__init__(metric)
         self.counts = []
@@ -68,7 +80,23 @@ class FrequencyTracker(AbstractMetricTracker, ABC):
 
 
 class ChangeOverTimeTracker(AbstractMetricTracker, ABC):
+    """
+    Tracks how a metric changes over time across multiple experiments.
 
+    The `ChangeOverTimeTracker` class records time-series data for a given metric, supporting
+    both cumulative and averaged tracking. It allows visualization of trends by plotting
+    changes over time using Matplotlib.
+
+    Attributes:
+        time_series (List[float]): A list storing time-based metric values for the current experiment.
+        experiments (Dict[str, Tuple[np.ndarray, List[float]]]): A dictionary storing time-series data
+            for multiple experiments, where keys are experiment titles, and values are tuples
+            containing x-values (time indices) and y-values (metric values).
+        average (bool): If `True`, the tracker stores counts and computes the average value
+            for each time step.
+        counts (List[int]): A list tracking the number of data points contributing to each time step
+            (used only when `average=True`).
+    """
     def __init__(self, metric: str, average=False):
         super().__init__(metric)
         self.time_series = []
@@ -124,6 +152,3 @@ class ChangeOverTimeTracker(AbstractMetricTracker, ABC):
 
         set_graph_props(ax, self.get_graph_props())
         ax.legend()
-
-
-        # ax.grid(axis='y', linestyle='--', alpha=0.7)

@@ -5,10 +5,8 @@ from typing import List, Dict
 import numpy as np
 import zmq
 import json
-from tracking.abstract_trackers import AbstractConstructionTracker, AbstractMetricTracker, AbstractQueryTracker
+from tracking.lib.abstract_trackers import AbstractConstructionTracker, AbstractMetricTracker, AbstractQueryTracker
 import threading
-import os
-import subprocess
 
 import matplotlib.pyplot as plt
 

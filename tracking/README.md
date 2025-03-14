@@ -33,5 +33,5 @@ Tracing code should not need to be modified in order to work. There already exis
 1) Modify [`include/tracking/metrics.h`](../include/tracking/metrics.h) to have a new inline function like the other ones existing. The 2nd argument to `MetricTracker::Track` accepts a json object.
 2) Add the tracing code along the code path somewhere. (*Note:If the tracer is not initialized, tracing will not work. In order to initialize the tracer in new programs, follow `build_memory_index.cpp:97`*)
 3) Create a corresponding `AbstractMetricTracker` (Either an `AbstractQueryTracker` for queries or `AbstractConstructionTracker` for construction). Read the documentation of the `AbstractMetricTracker` to understand how it operates better.
-4) Initialize your new MetricTracker and provide it to the `QueryTrackerRunner` or `ConstructionTrackingRunner`. (*Note that I have created some basic generic trackers in [`basic_metric_types.py`](./basic_metric_types.py))
+4) Initialize your new MetricTracker and provide it to the `QueryTrackerRunner` or `ConstructionTrackingRunner`. (*Note that I have created some basic generic trackers in [`basic_metric_types.py`](lib/basic_metric_types.py))
 5) Modify the experiments to your needs, run and see results!

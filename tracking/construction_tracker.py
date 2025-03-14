@@ -1,13 +1,11 @@
-from matplotlib.axes import Axes
-
-from tracking.abstract_trackers import AbstractConstructionTracker
-from tracking.basic_metric_types import FrequencyTracker, ChangeOverTimeTracker
-from tracking.tracker import AbstractTrackingRunner, ConstructionTrackingRunner
+from tracking.lib.abstract_trackers import AbstractConstructionTracker
+from tracking.lib.basic_metric_types import FrequencyTracker, ChangeOverTimeTracker
+from tracking.lib.tracker import ConstructionTrackingRunner
 import subprocess
 import time
 import os
 
-from tracking.util import download_sift, create_build
+from tracking.lib.util import download_sift, create_build
 
 class AddEdgeCountTracker(FrequencyTracker, AbstractConstructionTracker):
     def __init__(self):

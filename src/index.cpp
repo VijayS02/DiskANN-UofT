@@ -1371,6 +1371,24 @@ template <typename T, typename TagT, typename LabelT> void Index<T, TagT, LabelT
             _graph_store->set_neighbours((location_t)node, new_out_neighbors);
         }
     }
+
+    // We call the `set_neighbours()` method again, to include 4 (or N) closest nodes to the node.
+    T *query = nullptr;
+    int64_t additional_neighbors = 4; // TODO: For now, hard coded.
+    uint32_t *gt_ids = nullptr;
+    float *gt_dists = nullptr;
+    size_t query_num, query_dim, query_aligned_dim, gt_num, gt_dim;
+    const std::string truthset_file = "/home/kylekim/workspace_back/DiskANN_back/build/data/sift/sift_learn_gt_l2_100"; // TODO: For now, hard coded.
+    diskann::load_truthset(truthset_file, gt_ids, gt_dists, gt_num, gt_dim);
+    for (int64_t node_ctr = 0; node_ctr < (int64_t)(visit_order.size()); node_ctr++) {
+        uint32_t *gt_i = gt_ids + gt_dim * node_ctr; // Pointer arithmetic. By the implementation, the closest point is indexed at 0.
+        for (int64_t i = 1 ; i < additional_neighbors + 1 ; i++) {
+            // The loop starts from 1 and not 0.
+            // We skip the case for i = 0, since you should never add yourself (which is by definition closest to yourself) as your neighbor.
+            _graph_store->add_neighbour(node_ctr, *(gt_i + i)); // TODO: No handling of duplication for now.
+        }
+    }
+
     if (_nd > 0)
     {
         diskann::cout << "done. Link time: " << ((double)link_timer.elapsed() / (double)1000000) << "s" << std::endl;

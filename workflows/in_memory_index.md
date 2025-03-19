@@ -53,8 +53,18 @@ cd ..
 Now build and search the index and measure the recall using ground truth computed using brutefoce. 
 ```bash
 ./apps/utils/compute_groundtruth  --data_type float --dist_fn l2 --base_file data/sift/sift_learn.fbin --query_file  data/sift/sift_query.fbin --gt_file data/sift/sift_query_learn_gt100 --K 100
+./apps/utils/compute_groundtruth  --data_type float --dist_fn l2 --base_file /home/kylekim/workspace_back/DiskANN_back/build/data/sift/sift_learn.fbin --query_file  /home/kylekim/workspace_back/DiskANN_back/build/data/sift/sift_learn.fbin --gt_file /home/kylekim/workspace_back/DiskANN_back/build/data/sift/sift_learn_gt_l2_100 --K 100
+./apps/utils/compute_groundtruth  --data_type float --dist_fn l2 --base_file /home/kylekim/workspace_back/DiskANN_back/build/data/sift/sift_learn.fbin --query_file  /home/kylekim/workspace_back/DiskANN_back/build/data/sift/sift_query.fbin --gt_file /home/kylekim/workspace_back/DiskANN_back/build/data/sift/sift_query_gt_l2_100 --K 100
+
 ./apps/build_memory_index  --data_type float --dist_fn l2 --data_path data/sift/sift_learn.fbin --index_path_prefix data/sift/index_sift_learn_R32_L50_A1.2 -R 32 -L 50 --alpha 1.2
- ./apps/search_memory_index  --data_type float --dist_fn l2 --index_path_prefix data/sift/index_sift_learn_R32_L50_A1.2 --query_file data/sift/sift_query.fbin  --gt_file data/sift/sift_query_learn_gt100 -K 10 -L 10 20 30 40 50 100 --result_path data/sift/res
+./apps/build_memory_index  --data_type float --dist_fn l2 --data_path /home/kylekim/workspace_back/DiskANN_back/build/data/sift/sift_learn.fbin --index_path_prefix /home/kylekim/file/index/index_sift_learn_R32_L50_A1.2 -R 32 -L 50 --alpha 1.2
+gdb --args ./apps/build_memory_index --num_threads 1 --data_type float --dist_fn l2 --data_path /home/kylekim/workspace_back/DiskANN_back/build/data/sift/sift_learn.fbin --index_path_prefix /home/kylekim/file/index/index_sift_learn_R32_L50_A1.2 -R 32 -L 50 --alpha 1.2
+
+./apps/search_memory_index  --data_type float --dist_fn l2 --index_path_prefix data/sift/index_sift_learn_R32_L50_A1.2 --query_file /home/kylekim/workspace_back/DiskANN_back/build/data/sift/sift_learn.fbin --gt_file data/sift/sift_query_learn_gt100 -K 10 -L 10 20 30 40 50 100 --result_path data/sift/res
+
+./apps/search_memory_index  --data_type float --dist_fn l2 --index_path_prefix /home/kylekim/file/index/index_sift_learn_R32_L50_A1.2 --query_file /home/kylekim/workspace_back/DiskANN_back/build/data/sift/sift_query.fbin --gt_file /home/kylekim/workspace_back/DiskANN_back/build/data/sift/sift_query_gt_l2_100 -K 10 -L 10 20 30 40 50 100 --result_path data/sift/res
+
+./apps/search_memory_index  --data_type float --dist_fn l2 --index_path_prefix data/sift/index_sift_learn_R32_L50_A1.2 --query_file data/sift/sift_query.fbin  --gt_file data/sift/sift_query_learn_gt100 -K 10 -L 10 20 30 40 50 100 --result_path data/sift/res
  ```
  
 

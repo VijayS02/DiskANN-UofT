@@ -1,7 +1,10 @@
 from collections import defaultdict
 
+import numpy as np
+import pandas as pd
+from matplotlib import pyplot as plt
 from matplotlib.axes import Axes
-# import seaborn as sns
+import seaborn as sns
 
 
 from tracking.lib.abstract_trackers import AbstractConstructionTracker
@@ -15,23 +18,30 @@ from tracking.lib.util import download_sift, create_build
 
 class AddEdgeCountTracker(FrequencyTracker, AbstractConstructionTracker):
     def __init__(self):
-        super().__init__("add_edge_count", bins=None)
+        super().__init__("add_edge_count", bins=None, text=True)
+        self.const_data = dict()
+        self.total_edges = 0
+        self.edge_usage = dict()
+        self.exp_text_data = dict()
 
     def handle_metric_event(self, metric_data):
         self.add_data_point(metric_data)
-
-    def has_text_output(self):
-        return False
+        self.total_edges += metric_data
 
     def print_text_output(self):
-        return None
+        for exp in self.exp_text_data:
+            print(f"{exp}")
+            print(f"{self.exp_text_data[exp] * 100:>6.2f}% Edge Utilization")
+
+    def end_experiment(self, title):
+        self.end_experiment_graph(title)
+        self.exp_text_data[title] = self.total_edges / (self.const_data['range'] * self.const_data['n_nodes'])
 
     def get_graph_props(self):
         return {"x": "Edge Counts", "y": "Frequency", "title": "Edge Count Distribution" }
 
     def initialize_construction(self, construction_params):
-        print("Construction Started!")
-        print(construction_params)
+        self.const_data = construction_params
 
 class ConstructionPathLengthFreqTracker(FrequencyTracker, AbstractConstructionTracker):
     def __init__(self):
@@ -47,8 +57,7 @@ class ConstructionPathLengthFreqTracker(FrequencyTracker, AbstractConstructionTr
         return {"x": "Number of edges", "y": "Frequency", "title": "Construction Path Length Distribution", "ylog": True }
 
     def initialize_construction(self, construction_params):
-        print("Construction Started!")
-        print(construction_params)
+        pass
 
     def handle_metric_event(self, metric_data):
         self.add_data_point(metric_data)
@@ -60,12 +69,6 @@ class ConstructionPathLengthFreqTracker(FrequencyTracker, AbstractConstructionTr
 class ConstructionPathLengthOverTimeTracker(ChangeOverTimeTracker, AbstractConstructionTracker):
     def __init__(self):
         super().__init__("add_construction_path_length")
-
-    def has_text_output(self):
-        return False
-
-    def print_text_output(self):
-        return None
 
     def get_graph_props(self):
         return {"x": "Query", "y": "Number of Hops", "title": "Construction Path Length Over Time"}
@@ -83,7 +86,7 @@ class ConstructionPathLengthOverTimeTracker(ChangeOverTimeTracker, AbstractConst
 
 class NodeDistanceTracker(AbstractConstructionTracker):
     def __init__(self):
-        super().__init__("node_info")
+        super().__init__("node_info", graph=True, text=False)
         self.node_distances = defaultdict(list)  # Stores distances per neighbor index
         self.data = dict()
         self.zeros = 0
@@ -101,96 +104,44 @@ class NodeDistanceTracker(AbstractConstructionTracker):
 
     def generate_subplot(self, ax: Axes):
         """Generates a boxplot for each neighbor index."""
-        if not self.data:
-            return
+        # Convert self.data to a Pandas DataFrame for Seaborn
+        plot_data = []
+        for key, node_dists in self.data.items():
+            for neighbor_idx, distances in node_dists.items():
+                for value in distances:
+                    plot_data.append({"Experiment": key, "Neighbor Index": neighbor_idx, "Difference Distance": value})
 
-        print(self.zeros, " ZERO DISTANCEs.")
+        df = pd.DataFrame(plot_data)
 
-        max_dist = 0
-        for key in self.data:
-            node_dists = self.data[key]
-            max_dist = max(len(node_dists.keys()), max_dist)
-            data = [node_dists[i] for i in sorted(node_dists.keys())]
-            # ax.violinplot(data, showmeans=True, showmedians=True)
-            ax.boxplot(data, positions=range(len(data)), patch_artist=True)
+        # Set Seaborn theme for better aesthetics
+        sns.set_theme(style="ticks", palette="pastel")
 
-        ys = []
-        for x in range(max_dist):
-            ys.append(1.2 ** x)
+        # Create the boxplot
+        sns.boxplot(
+            x="Neighbor Index", y="Difference Distance",
+            hue="Experiment",  # Groups by experiment
+            data=df, palette="pastel", ax=ax
+        )
 
-        ax.plot(ys ,label="Exponential alpha (1.2^x)")
+        # Plot exponential reference line
+        max_dist = df["Neighbor Index"].max()
+        ys = [1.2 ** x for x in range(max_dist)]
+        ax.plot(ys, label="Exponential alpha (1.2^x)", color="black", linestyle="dashed")
 
-        ax.set_xlabel("Neighbor Index (Lower is closer)")
-        ax.set_ylabel("Distance normalized (X[i] = x[i]/x[0])")
-        ax.set_title("Distribution of Neighbor Distances by Index")
+        # Customize labels and legend
         ax.set_yscale('log')
-        ax.legend()
-
-    def has_text_output(self):
-        return False
-
-    def print_text_output(self):
-        pass
-
-    def end_experiment(self, title):
-        """Stores the current experiment's data."""
-        self.data[title] = dict(self.node_distances)
-        self.node_distances.clear()
-
-    def has_graph(self) -> bool:
-        return True
-
-
-class NodeDistanceDifferenceTracker(AbstractConstructionTracker):
-    def __init__(self):
-        super().__init__("node_info")
-        self.node_distances = defaultdict(list)  # Stores distances per neighbor index
-        self.data = dict()
-
-    def initialize_construction(self, construction_params):
-        pass
-
-    def handle_metric_event(self, metric_data):
-        """Stores sorted neighbor distances per index across nodes."""
-        sorted_distances = sorted(metric_data['neighbor_distances'])
-        if len(sorted_distances) > 1:
-            for i in range(1, len(sorted_distances)):
-                diff = sorted_distances[i]/max(sorted_distances[i-1], 1)
-                self.node_distances[i - 1].append(diff)
-
-    def generate_subplot(self, ax: Axes):
-        """Generates a boxplot for each neighbor index."""
-        if not self.data:
-            return
-
-        max_dist = 0
-        for key in self.data:
-            node_dists = self.data[key]
-            max_dist = max(len(node_dists.keys()), max_dist)
-            data = [node_dists[i] for i in sorted(node_dists.keys())]
-            ax.boxplot(data, positions=range(len(data)), patch_artist=True)
-
-        ys = [1.2 for i in range(max_dist)]
-        ax.plot(ys ,label="Exponential alpha (1.2^x)")
-
         ax.set_xlabel("Neighbor Index")
-        ax.set_ylabel("Difference Distance (x[i]/x[i-1])")
-        ax.set_title("Distribution of Distances Differences by Index")
-        ax.set_yscale('log')
+        ax.set_ylabel("Distance Normalized")
+        ax.set_title("Distribution of Distance Differences by Index")
+        ax.legend(title="Experiment")
 
-    def has_text_output(self):
-        return False
+        sns.despine(offset=10, trim=True)  # Clean up plot edges
 
-    def print_text_output(self):
-        pass
 
     def end_experiment(self, title):
         """Stores the current experiment's data."""
         self.data[title] = dict(self.node_distances)
         self.node_distances.clear()
-
-    def has_graph(self) -> bool:
-        return True
 
 
 
@@ -220,19 +171,24 @@ if __name__ == "__main__":
     base_file = os.path.join(sift_folder, base_file_name)
 
     tracker = ConstructionTrackingRunner(build_memory_index,
-                                         metric_handlers=[AddEdgeCountTracker(), NodeDistanceTracker(), NodeDistanceDifferenceTracker()])
+                                         metric_handlers=[AddEdgeCountTracker(), NodeDistanceTracker()])
 
 
     tracking_port = 5555
     print_out = True
 
     experiments = [
-        
         {
             'r':32,
             'l_build': 50,
             'alpha': 1.2,
             "saturate_graph": True,
+        },
+        {
+            'r':32,
+            'l_build': 50,
+            'alpha': 1.2,
+            "saturate_graph": False,
         },
     ]
 
@@ -284,4 +240,9 @@ if __name__ == "__main__":
 
         tracker.trace_program(title, trace_function, tracking_port=tracking_port)
 
+
+    tracker.generate_text()
+
     tracker.generate_graphs()
+
+

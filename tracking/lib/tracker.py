@@ -33,6 +33,13 @@ class AbstractTrackingRunner:
             for tracker in tracker_list:
                 yield tracker, metric
 
+
+    def generate_text(self):
+        text_trackers = [tracker for tracker, _ in self.iterate_trackers() if tracker.has_text_output()]
+
+        for tracker in text_trackers:
+            tracker.print_text_output()
+
     def generate_graphs(self):
         valid_trackers = [tracker for tracker, _ in self.iterate_trackers() if tracker.has_graph()]
         if not valid_trackers:
@@ -40,6 +47,8 @@ class AbstractTrackingRunner:
             return
 
         num_trackers = len(valid_trackers)
+
+
 
         # Compute the closest square layout (rows x cols)
         ncols = int(np.ceil(np.sqrt(num_trackers)))  # Columns should be sqrt of count

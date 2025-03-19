@@ -35,8 +35,8 @@ class FrequencyTracker(AbstractMetricTracker, ABC):
             where keys are experiment titles and values are lists of data points.
         bins (int): Number of bins to use when plotting histograms.
     """
-    def __init__(self, metric: str, bins=100):
-        super().__init__(metric)
+    def __init__(self, metric: str, bins=100, text=False):
+        super().__init__(metric, graph=True, text=text)
         self.counts = []
         self.experiments = dict()
         self.bins = bins
@@ -49,15 +49,15 @@ class FrequencyTracker(AbstractMetricTracker, ABC):
     def add_data_point(self, data):
         self.counts.append(data)
 
-    def has_graph(self):
-        return True
-
-    def end_experiment(self, title):
+    def end_experiment_graph(self, title):
         if len(self.counts) == 0:
             self.experiments[title] = None
 
         self.experiments[title] = self.counts
         self.counts = []
+
+    def end_experiment(self, title):
+        self.end_experiment_graph(title)
 
     def generate_subplot(self,ax):
         """Plots the edge count occurrences as a bar chart."""
@@ -100,8 +100,8 @@ class ChangeOverTimeTracker(AbstractMetricTracker, ABC):
         counts (List[int]): A list tracking the number of data points contributing to each time step
             (used only when `average=True`).
     """
-    def __init__(self, metric: str, average=False):
-        super().__init__(metric)
+    def __init__(self, metric: str, average=False, text=False):
+        super().__init__(metric, graph=True, text=text)
         self.time_series = []
         self.experiments = dict()
         self.average = average
@@ -109,6 +109,9 @@ class ChangeOverTimeTracker(AbstractMetricTracker, ABC):
 
     @abstractmethod
     def get_graph_props(self):
+        pass
+
+    def print_text_output(self):
         pass
 
     def add_data_point(self, metric_data, i=-1):
@@ -124,9 +127,6 @@ class ChangeOverTimeTracker(AbstractMetricTracker, ABC):
             self.time_series[i] = self.time_series[i] + metric_data
             if self.average:
                 self.counts[i] += 1
-
-    def has_graph(self):
-        return True
 
     def end_experiment(self, title):
         if not self.time_series:

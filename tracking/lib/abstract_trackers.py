@@ -4,8 +4,10 @@ from matplotlib.axes import Axes
 
 
 class AbstractMetricTracker:
-    def __init__(self, metric: str):
+    def __init__(self, metric: str, text: bool=False, graph: bool=False):
         self.metric = metric
+        self.text = text
+        self.graph = graph
 
     def get_metric_name(self) -> str:
         return self.metric
@@ -20,13 +22,12 @@ class AbstractMetricTracker:
         """
         pass
 
-    @abstractmethod
     def has_graph(self) -> bool:
         """
         Return whether this metric tracker generates a graph using generate_subplot or not.
         :return: Boolean - does this metric have a graph?
         """
-        pass
+        return self.graph
 
     @abstractmethod
     def generate_subplot(self,ax: Axes):
@@ -36,12 +37,12 @@ class AbstractMetricTracker:
         """
         pass
 
-    @abstractmethod
     def has_text_output(self):
         """
-        Unused. 
+        Return whether this metric tracker generates a text using print_text_output or not.
+        :return: Boolean - does this metric have text to print?
         """
-        pass
+        return self.text
 
     @abstractmethod
     def print_text_output(self):

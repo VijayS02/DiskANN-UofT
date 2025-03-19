@@ -14,9 +14,14 @@ inline void TestTrack(int number)
 }
 
 
-inline void StartConstruction()
+inline void StartConstruction(uint32_t range, uint32_t n_nodes )
 {
-    MetricTracker::Track("construction_start", true);
+    const nlohmann::json jsonData = {
+        {"range", range},
+        {"n_nodes", n_nodes}
+    };
+
+    MetricTracker::Track("construction_start", jsonData);
 }
 
 inline void EndConstruction()

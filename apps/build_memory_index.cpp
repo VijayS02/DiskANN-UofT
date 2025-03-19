@@ -127,7 +127,6 @@ int main(int argc, char **argv)
     try
     {
         diskann::cout << "Saturate graph: "<< saturate_graph << std::endl;
-        StartConstruction();
         diskann::cout << "Starting index build with R: " << R << "  Lbuild: " << L << "  alpha: " << alpha
                       << "  #threads: " << num_threads << std::endl;
 

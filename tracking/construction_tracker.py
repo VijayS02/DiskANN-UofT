@@ -232,11 +232,9 @@ if __name__ == "__main__":
             'r':32,
             'l_build': 50,
             'alpha': 1.2,
-            "saturate_graph": False,
+            "saturate_graph": True,
         },
     ]
-
-    l = 100
 
     for experiment in experiments:
         r = experiment['r']
@@ -260,8 +258,11 @@ if __name__ == "__main__":
             "-L", str(l_build),
             "--alpha", str(alpha),
             "--num_threads", "1",
-            "--tracking_addr", f"tcp://localhost:{tracking_port}"
+            "--tracking_addr", f"tcp://localhost:{tracking_port}",
+            "--saturate_graph" if "saturate_graph" in experiment and experiment["saturate_graph"] else "",
         ]
+
+        print(command)
 
         def trace_function():
             process = subprocess.Popen(

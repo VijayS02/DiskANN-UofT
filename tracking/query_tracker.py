@@ -173,19 +173,7 @@ if __name__ == "__main__":
         {
             'r':32,
             'l_build': 50,
-            'alpha': 1.5,
-            "saturate_graph": False,
-        },
-        {
-            'r':64,
-            'l_build': 50,
             'alpha': 1.2,
-            "saturate_graph": False,
-        },
-        {
-            'r':64,
-            'l_build': 50,
-            'alpha': 1.5,
             "saturate_graph": False,
         },
     ]
@@ -212,7 +200,7 @@ if __name__ == "__main__":
                 "--data_path", base_file,
                 "--index_path_prefix", index_prefix,
                 "-R", str(r),
-                "--saturate_graph" if "saturate_graph" in experiments else "",
+                "--saturate_graph" if "saturate_graph" in experiment and experiment["saturate_graph"] else "",
                 "-L", str(l_build),
                 "--alpha", str(alpha),
                 "--num_threads", "1",

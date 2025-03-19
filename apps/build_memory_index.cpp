@@ -73,12 +73,13 @@ int main(int argc, char **argv)
                                        program_options_utils::FILTERED_LBUILD);
         optional_configs.add_options()("label_type", po::value<std::string>(&label_type)->default_value("uint"),
                                        program_options_utils::LABEL_TYPE_DESCRIPTION);
+        optional_configs.add_options()("saturate_graph", po::bool_switch()->default_value(false),
+                               program_options_utils::USE_OPQ);
 
         optional_configs.add_options()("tracking_addr", po::value<std::string>(&connection_str)->default_value("tcp://localhost:5555"),
                                        program_options_utils::LABEL_TYPE_DESCRIPTION);
 
-        optional_configs.add_options()("saturate_graph", po::bool_switch()->default_value(false),
-                                       program_options_utils::USE_OPQ);
+
 
         // Merge required and optional parameters
         desc.add(required_configs).add(optional_configs);
@@ -125,6 +126,7 @@ int main(int argc, char **argv)
 
     try
     {
+        diskann::cout << "Saturate graph: "<< saturate_graph << std::endl;
         StartConstruction();
         diskann::cout << "Starting index build with R: " << R << "  Lbuild: " << L << "  alpha: " << alpha
                       << "  #threads: " << num_threads << std::endl;

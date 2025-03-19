@@ -69,7 +69,10 @@ class FrequencyTracker(AbstractMetricTracker, ABC):
             max_value = max(max_value, max(self.experiments[title]))
 
         # print(min_value, max_value)
-        bins = np.linspace(min_value, max_value, self.bins)
+        if self.bins is not None:
+            bins = np.linspace(min_value, max_value, self.bins)
+        else:
+            bins = max_value - min_value
 
         for title in self.experiments:
             data = self.experiments[title]

@@ -62,5 +62,16 @@ inline void ConfigureExperimentQuery(size_t queries)
 }
 
 
+inline void NodeInfo(uint32_t node, std::vector<float> neighbor_distances)
+{
+    const nlohmann::json jsonData = {
+            {"neighbor_distances", neighbor_distances},
+            {"nodeid", node},
+        };
+
+    MetricTracker::Track("node_info", jsonData);
+
+}
+
 
 #endif //METRICS_H

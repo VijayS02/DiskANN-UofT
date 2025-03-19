@@ -1557,6 +1557,12 @@ void Index<T, TagT, LabelT>::build_with_data_populated(const std::vector<TagT> &
         max = std::max(max, pool.size());
         min = std::min(min, pool.size());
         total += pool.size();
+        std::vector<float> distances = {};
+        for (auto neighbor: pool)
+        {
+            distances.push_back(_data_store->get_distance(i, neighbor));
+        }
+        NodeInfo(i, distances);
 
         AddEdgeCount(pool.size());
         if (pool.size() < 2)

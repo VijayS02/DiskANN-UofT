@@ -35,7 +35,7 @@ class FrequencyTracker(AbstractMetricTracker, ABC):
             where keys are experiment titles and values are lists of data points.
         bins (int): Number of bins to use when plotting histograms.
     """
-    def __init__(self, metric: str, bins=100, text=False):
+    def __init__(self, metric: str, bins='auto', text=False):
         super().__init__(metric, graph=True, text=text)
         self.counts = []
         self.experiments = dict()
@@ -70,9 +70,9 @@ class FrequencyTracker(AbstractMetricTracker, ABC):
 
         # print(min_value, max_value)
         if self.bins is not None:
-            bins = np.linspace(min_value, max_value, self.bins)
+            bins = self.bins
         else:
-            bins = max(max_value - min_value, 1)
+            bins = max(int(max_value - min_value), 1)
 
         for title in self.experiments:
             data = self.experiments[title]

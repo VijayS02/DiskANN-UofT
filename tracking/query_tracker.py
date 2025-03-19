@@ -8,7 +8,7 @@ from tracking.lib.util import download_sift, create_build
 
 class NodeVisitedDistribution(FrequencyTracker, AbstractQueryTracker):
     def __init__(self):
-        super().__init__("visited_node")
+        super().__init__("visited_node", bins=None)
         self.edges_visited = 0
 
     def end_query(self, _):
@@ -45,7 +45,7 @@ class QueryTimeDistribution(FrequencyTracker, AbstractQueryTracker):
         pass
 
     def get_graph_props(self):
-        return {"x": "Query Time (ms)", "y": "Frequency", "title": "Query Time Distribution" }
+        return {"x": "Query Time (ms)", "y": "Frequency", "title": "Query Time Distribution", 'ylog': True }
 
 class AverageDistancePerStep(ChangeOverTimeTracker, AbstractQueryTracker):
     def __init__(self):

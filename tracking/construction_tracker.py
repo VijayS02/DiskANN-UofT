@@ -30,12 +30,13 @@ class AddEdgeCountTracker(FrequencyTracker, AbstractConstructionTracker):
 
     def print_text_output(self):
         for exp in self.exp_text_data:
-            print(f"{exp}")
+            print(f"\n{exp}")
             print(f"{self.exp_text_data[exp] * 100:>6.2f}% Edge Utilization")
 
     def end_experiment(self, title):
         self.end_experiment_graph(title)
         self.exp_text_data[title] = self.total_edges / (self.const_data['range'] * self.const_data['n_nodes'])
+        self.total_edges = 0
 
     def get_graph_props(self):
         return {"x": "Edge Counts", "y": "Frequency", "title": "Edge Count Distribution" }

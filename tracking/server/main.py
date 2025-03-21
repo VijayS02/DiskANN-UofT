@@ -362,6 +362,15 @@ def list_indexes():
     return jsonify({"indexes": indexes})
 
 
+@app.route("/status")
+def status():
+    with build_lock:
+        if BUILD_DIR and os.path.exists(BUILD_DIR):
+            return jsonify({"build_dir": BUILD_DIR}), 200
+        return jsonify({"build_dir": "NONE"}), 200
+        
+
+
 @app.route("/query_index", methods=["POST"])
 def query_graph():
     """Start the query process in a separate thread."""

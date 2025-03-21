@@ -90,12 +90,7 @@ def stream_func(func):
         # Create and start the thread
         thread = threading.Thread(target=run_func)
         thread.start()
-        thread.join()  # Wait for thread to complete
-        
-        # If there was an error, raise it
-        if result_container['error']:
-            raise result_container['error']
-            
+
         # Return the result
         return result_container['value']
         
@@ -304,12 +299,15 @@ def trace_query(index_path, query_file, l=50, k=10):
 def index():
     return render_template("index.html")  # HTML UI
 
-@app.route("/create_build")
-def run_build():
+@stream_func
+def exec_build(*args, **kwargs):
     global BUILD_DIR
-    
     with build_lock:
-        BUILD_DIR = stream_func(create_build)(PROJECT_ROOT, tracking=True, type="Release")
+        BUILD_DIR = create_build(*args, **kwargs)
+        
+@app.route("/create_build", methods=["POST"])
+def run_build():    
+    exec_build(PROJECT_ROOT, tracking=True, type="Release")
     return "Build started! UI will update automatically."
 
 @app.route('/upload', methods=['POST'])
@@ -346,10 +344,14 @@ def create_graph():
     alpha = data.get("alpha", 1.2)  # Default 1.2
     saturate_graph = data.get("saturate_graph", True)  # Default True
 
-    with build_lock:
+    if build_lock.acquire(blocking=False):
         if BUILD_DIR is None:
+            build_lock.release()
             return "Build not started. Please start the build first.", 400
-
+        build_lock.release()
+    else:
+        return jsonify({"error": "Build operation in progress"}), 423
+     
     return construct_graph(index_name, base_file, r=r, l_build=l_build, alpha=alpha, saturate_graph=saturate_graph)
 
 @app.route("/list_indexes")
@@ -364,10 +366,17 @@ def list_indexes():
 
 @app.route("/status")
 def status():
-    with build_lock:
-        if BUILD_DIR and os.path.exists(BUILD_DIR):
-            return jsonify({"build_dir": BUILD_DIR}), 200
-        return jsonify({"build_dir": "NONE"}), 200
+    if build_lock.acquire(blocking=False):
+        try:
+            if BUILD_DIR and os.path.exists(BUILD_DIR):
+                return jsonify({"build_dir": BUILD_DIR}), 200
+            return jsonify({"build_dir": "NONE"}), 200
+        finally:
+            # Always release the lock
+            build_lock.release()
+    else:
+        # Lock couldn't be acquired immediately
+        return jsonify({"error": "Build operation in progress"}), 423 
         
 
 
@@ -391,10 +400,16 @@ def query_graph():
 
     index_path = os.path.join(INDEX_DIR, index_name)
 
-    with build_lock:
+    if build_lock.acquire(blocking=False):
         if BUILD_DIR is None:
+            build_lock.release()
             return "Build not started. Please start the build first.", 400
+        build_lock.release()
         return trace_query(index_path, query_file, l=l, k=k)
+        
+    else:
+        return jsonify({"error": "Build operation in progress"}), 423
+        
 
 if __name__ == "__main__":
     socketio.run(app, debug=True)

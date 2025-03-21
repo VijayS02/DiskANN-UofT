@@ -2,10 +2,16 @@
 import { Button } from "@/components/ui/button";
 import useFetch from "@/util";
 import Link from "next/link";
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+  } from "@/components/ui/tooltip"
 
 
 interface Status {
-    buildDir: string;
+    build_dir: string;
 }
 
 function Navbar() {
@@ -21,7 +27,7 @@ function Navbar() {
               DiskANN Tracker
             </div>
             <div className="my-auto">
-                <Pinger status={loading ? "loading" : error ? "error" : data?.buildDir ? "success" : "no_build"} />
+                <Pinger status={loading ? "loading" : error ? error === "423" ? "locked" : "error" : data?.build_dir === "NONE" ? "no_build" : "success"} />
             </div>
           </div>
           <div className="flex space-x-4 my-auto">
@@ -42,10 +48,9 @@ interface BuildResponse {
 function CreateBuild(){
 
     const { data, loading, error, fetchData } = useFetch<BuildResponse>(
-        "/create_build"
+        "/create_build",
+        "POST"
     );
-
-    console.log(loading);
 
 
     return <Button disabled={loading} onClick={(e) => {
@@ -53,24 +58,50 @@ function CreateBuild(){
     }} size={'lg'}>Build</Button>
 }
 
-function Pinger({status}: { status: "loading" | "error" | "success" | "no_build"}){
-    // Instead of string interpolation, use conditional classes
-    const bgPingClass = status === "loading" 
-      ? "bg-yellow-500 animate-ping" 
-      : status === "error" 
-        ? "bg-gray-500/20" 
-        : status === 'no_build' ? 'bg-orange-500' : "bg-green-500 animate-ping";
-        
-    const bgDotClass = status === "loading"  
-      ? "bg-yellow-500" 
-      : status === "error"  
-        ? "bg-gray-500/20" 
-        : status === 'no_build' ? 'bg-orange-500' : "bg-green-500";
+function Pinger({status}: { status: "loading" | "locked" | "error" | "success" | "no_build"}){
+    const statusMap = {
+        "loading": "Loading...",
+        "locked": "Mutex Locked",
+        "error": "Error",
+        "success": "Build Ready",
+        "no_build": "No Build"
+    }
 
-    return <span className="relative flex size-3">
-    <span className={`absolute inline-flex h-full w-full duration-500 rounded-full opacity-75 ${bgPingClass}`}></span>
-    <span className={`relative inline-flex size-3 rounded-full ${bgDotClass}`}></span>
-  </span>
+    const pingColors = {
+        "loading": "bg-yellow-500 animate-pulse",
+        "locked": "bg-purple-500/50 animate-pulse",
+        "error": "bg-gray-500",
+        "success": "bg-green-500 animate-pulse",
+        "no_build": "bg-orange-500"
+    }
+
+    const dotColors = {
+        "loading": "bg-yellow-500",
+        "locked": "bg-purple-500/50",
+        "error": "bg-gray-500",
+        "success": "bg-green-500",
+        "no_build": "bg-orange-500"
+    }
+
+
+    // Instead of string interpolation, use conditional classes
+    const bgPingClass = pingColors[status]
+        
+    const bgDotClass = dotColors[status]
+
+    return <TooltipProvider>
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <div>
+                    <span className="relative flex size-3">
+                        <span className={`absolute inline-flex h-full w-full duration-500 rounded-full opacity-75 ${bgPingClass}`}></span>
+                        <span className={`relative inline-flex size-3 rounded-full ${bgDotClass}`}></span>
+                    </span>
+                    </div>
+                </TooltipTrigger>
+                <TooltipContent>{statusMap[status]}</TooltipContent>
+            </Tooltip>
+    </TooltipProvider>
 }
 
 

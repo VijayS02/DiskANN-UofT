@@ -43,7 +43,7 @@ const useFetch = <T,>(
 
                 const response = await fetch(url, requestOptions);
                 if (!response.ok) {
-                    throw new Error(`HTTP error! Status: ${response.status}`);
+                    throw new Error(`${response.status}`);
                 }
                 const result: T = await response.json();
                 setData(result);

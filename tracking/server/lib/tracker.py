@@ -5,7 +5,7 @@ from typing import List, Dict
 import numpy as np
 import zmq
 import json
-from tracking.lib.abstract_trackers import AbstractConstructionTracker, AbstractMetricTracker, AbstractQueryTracker
+from lib.abstract_trackers import AbstractConstructionTracker, AbstractMetricTracker, AbstractQueryTracker
 import threading
 
 import matplotlib.pyplot as plt
@@ -138,8 +138,7 @@ class AbstractTrackingRunner:
 
 
 class ConstructionTrackingRunner(AbstractTrackingRunner):
-    def __init__(self, executable_location, port=5556, metric_handlers: List[AbstractConstructionTracker]=None):
-        self.executable_location = executable_location
+    def __init__(self, port=5556, metric_handlers: List[AbstractConstructionTracker]=None):
         super().__init__(port=port, metric_handlers=metric_handlers)
 
     def handle_metric_event(self, data):

@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 
 import numpy as np
 
-from tracking.lib.abstract_trackers import AbstractMetricTracker
+from lib.abstract_trackers import AbstractMetricTracker
 
 
 def set_graph_props(ax, graph_props):

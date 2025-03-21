@@ -13,7 +13,43 @@
 </head>
 <body>
     <h1>Flask Build Status</h1>
+
+    <!-- File Upload Form -->
+    <h2>Upload a File</h2>
+    <input type="file" id="fileInput">
+    <button onclick="uploadFile()">Upload</button>
+    <p id="uploadStatus"></p>
+
+    <!-- Start Build Button -->
+    <h2>Build Process</h2>
     <button onclick="startBuild()">Start Build</button>
+
+    <!-- Graph Construction Form -->
+    <h2>Construct Graph</h2>
+    <form id="graphForm">
+        <label>Index Name:</label>
+        <input type="text" id="indexName" required><br><br>
+        
+        <label>Base File:</label>
+        <input type="text" id="baseFile" required><br><br>
+
+        <label>r (Neighborhood Size):</label>
+        <input type="number" id="r" value="32"><br><br>
+
+        <label>l_build (Construction Depth):</label>
+        <input type="number" id="lBuild" value="50"><br><br>
+
+        <label>alpha (Exponential Factor):</label>
+        <input type="number" step="0.1" id="alpha" value="1.2"><br><br>
+
+        <label>Saturate Graph:</label>
+        <input type="checkbox" id="saturateGraph" checked><br><br>
+
+        <button type="button" onclick="createGraph()">Create Graph</button>
+    </form>
+    <p id="graphStatus"></p>
+
+    <!-- Terminal Output -->
     <div id="terminal"></div>
 
     <script>
@@ -35,9 +71,71 @@
         function startBuild() {
             fetch("/create_build")
                 .then(response => response.text())
-                .then(data => {
-                    document.getElementById("terminal").innerHTML = "<p>Build started...</p>";
-                });
+        }
+
+        function uploadFile() {
+            let fileInput = document.getElementById("fileInput");
+            let file = fileInput.files[0];
+
+            if (!file) {
+                document.getElementById("uploadStatus").innerText = "Please select a file first!";
+                return;
+            }
+
+            let formData = new FormData();
+            formData.append("file", file);
+
+            fetch("/upload", {
+                method: "POST",
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById("uploadStatus").innerText = data.message + " (Path: " + data.path + ")";
+            })
+            .catch(error => {
+                document.getElementById("uploadStatus").innerText = "Error uploading file.";
+            });
+        }
+
+        function createGraph() {
+            let indexName = document.getElementById("indexName").value;
+            let baseFile = document.getElementById("baseFile").value;
+            let r = document.getElementById("r").value;
+            let lBuild = document.getElementById("lBuild").value;
+            let alpha = document.getElementById("alpha").value;
+            let saturateGraph = document.getElementById("saturateGraph").checked;
+
+            if (!indexName || !baseFile) {
+                document.getElementById("graphStatus").innerText = "Index Name and Base File are required!";
+                return;
+            }
+
+            let requestData = {
+                index_name: indexName,
+                base_file: baseFile,
+                r: parseInt(r),
+                l_build: parseInt(lBuild),
+                alpha: parseFloat(alpha),
+                saturate_graph: saturateGraph
+            };
+
+            fetch("/create_graph", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(requestData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    document.getElementById("graphStatus").innerText = "Error: " + data.error;
+                } else {
+                    document.getElementById("graphStatus").innerText = data.message;
+                }
+            })
+            .catch(error => {
+                document.getElementById("graphStatus").innerText = "Error creating graph.";
+            });
         }
     </script>
 </body>

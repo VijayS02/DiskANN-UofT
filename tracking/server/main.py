@@ -213,5 +213,11 @@ def construct_graph(index_name, base_file, r=32, l_build=50, alpha=1.2, saturate
     return "Graph construction complete!", 200
 
 
+@app.route("/list_indexes")
+def list_indexes():
+    indexes = os.listdir(INDEX_DIR)
+    return jsonify({"indexes": indexes})
+
+
 if __name__ == "__main__":
     socketio.run(app, debug=True)

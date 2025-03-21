@@ -76,7 +76,7 @@ int main(int argc, char **argv)
         optional_configs.add_options()("saturate_graph", po::bool_switch()->default_value(false),
                                program_options_utils::USE_OPQ);
 
-        optional_configs.add_options()("tracking_addr", po::value<std::string>(&connection_str)->default_value("tcp://localhost:5555"),
+        optional_configs.add_options()("tracking_addr", po::value<std::string>(&connection_str)->default_value("NONE"),
                                        program_options_utils::LABEL_TYPE_DESCRIPTION);
 
 

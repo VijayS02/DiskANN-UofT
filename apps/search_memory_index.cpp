@@ -339,7 +339,7 @@ int main(int argc, char **argv)
                                        po::value<float>(&fail_if_recall_below)->default_value(0.0f),
                                        program_options_utils::FAIL_IF_RECALL_BELOW);
 
-        optional_configs.add_options()("tracking_addr", po::value<std::string>(&connection_str)->default_value("tcp://localhost:5555"),
+        optional_configs.add_options()("tracking_addr", po::value<std::string>(&connection_str)->default_value("NONE"),
                                        program_options_utils::LABEL_TYPE_DESCRIPTION);
 
         // Output controls

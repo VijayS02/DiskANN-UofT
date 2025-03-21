@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -27,8 +29,28 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+        <Navbar />
+        <div className="flex justify-center py-3">
+          <div className="container">
         {children}
+        </div>
+        </div>
       </body>
     </html>
   );
+}
+
+
+function Navbar(){
+  return <div className="w-full flex justify-center sticky top-0 h-16 shadow p-2">
+    <div className="container flex justify-between">
+      <div className="text-2xl my-auto">
+      DiskANN Tracker
+      </div>
+      <div className="flex space-x-4 my-auto">
+        <Button variant={'ghost'} size={'lg'} asChild><Link href="/">Construct</Link></Button>
+        <Button variant={'ghost'} size={'lg'} asChild><Link href="/query">Query</Link></Button>
+      </div>
+    </div>
+  </div>
 }

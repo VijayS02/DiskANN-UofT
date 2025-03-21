@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flask Build Status</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.3.2/socket.io.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; }
+        #terminal { border: 1px solid #ccc; padding: 10px; max-height: 300px; overflow-y: auto; background: black; color: green; font-family: monospace; }
+        .error { color: red; }
+    </style>
+</head>
+<body>
+    <h1>Flask Build Status</h1>
+    <button onclick="startBuild()">Start Build</button>
+    <div id="terminal"></div>
+
+    <script>
+        var socket = io.connect("http://localhost:5000");
+
+        socket.on("terminal_output", function(data) {
+            let statusDiv = document.getElementById("terminal");
+            let newLog = document.createElement("p");
+            newLog.innerText = data.status;
+
+            if (data.status.startsWith("ERROR")) {
+                newLog.classList.add("error"); // Highlight errors in red
+            }
+
+            statusDiv.appendChild(newLog);
+            statusDiv.scrollTop = statusDiv.scrollHeight;  // Auto-scroll down
+        });
+
+        function startBuild() {
+            fetch("/create_build")
+                .then(response => response.text())
+                .then(data => {
+                    document.getElementById("terminal").innerHTML = "<p>Build started...</p>";
+                });
+        }
+    </script>
+</body>
+</html>

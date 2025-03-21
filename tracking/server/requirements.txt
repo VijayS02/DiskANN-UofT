@@ -1,0 +1,7 @@
+matplotlib
+zmq
+seaborn
+pandas
+flask
+python-dotenv
+flask_socketio

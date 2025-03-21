@@ -1,5 +1,0 @@
-matplotlib
-zmq
-seaborn
-pandas
-flask

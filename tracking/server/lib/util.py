@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import re
 import urllib.request
 import tarfile
+import sys
 
 def download_sift(base_dir, apps_dir):
     tar_file_path = os.path.join(base_dir, "sift.tar.gz")
@@ -62,7 +63,6 @@ def create_build(project_root, build_subdir="script_output", type="Release", tra
 
     # Ensure build directory exists
     os.makedirs(build_dir, exist_ok=True)
-
     os.chdir(build_dir)
 
     # Run CMake configuration
@@ -72,18 +72,43 @@ def create_build(project_root, build_subdir="script_output", type="Release", tra
         f"-DTRACKING_ENABLED={'ON' if tracking else 'OFF'}",
         project_root
     ]
-    subprocess.run(cmake_command, check=True)
+
+    process = subprocess.Popen(
+        cmake_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, bufsize=1, universal_newlines=True
+    )
+
+    for line in process.stdout:
+        sys.stdout.write(line)  # Write to WebSocket (via stdout redirection)
+        sys.stdout.flush()
+
+    for line in process.stderr:
+        sys.stderr.write(line)  # Write stderr to WebSocket
+        sys.stderr.flush()
+
+    process.wait()  # Wait for subprocess to complete
 
     print("\n\nRunning make...")
 
     # Run Make inside the build directory
     make_command = ["make", "-j"]
-    subprocess.run(make_command, check=True)
+
+    process = subprocess.Popen(
+        make_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, bufsize=1, universal_newlines=True
+    )
+
+    for line in process.stdout:
+        sys.stdout.write(line)  # Forward to WebSocket
+        sys.stdout.flush()
+
+    for line in process.stderr:
+        sys.stderr.write(line)  # Forward stderr to WebSocket
+        sys.stderr.flush()
+
+    process.wait()
 
     print(f"Build completed successfully! Build artifacts are in {build_dir}")
 
     return build_dir
-
 
 def run_and_parse_output(cmd, print_out=False):
     total_nodes = 0

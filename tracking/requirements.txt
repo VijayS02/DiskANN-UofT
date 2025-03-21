@@ -1,6 +1,5 @@
 matplotlib
-tarfile
-re
 zmq
 seaborn
 pandas
+flask

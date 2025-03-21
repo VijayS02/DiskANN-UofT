@@ -49,6 +49,25 @@
     </form>
     <p id="graphStatus"></p>
 
+    <!-- Query Index Form -->
+    <h2>Query Index</h2>
+    <form id="queryForm">
+        <label>Index Path:</label>
+        <input type="text" id="indexPath" required><br><br>
+
+        <label>Query File:</label>
+        <input type="text" id="queryFile" required><br><br>
+
+        <label>l (Search Depth):</label>
+        <input type="number" id="queryL" value="50"><br><br>
+
+        <label>k (Top K Results):</label>
+        <input type="number" id="queryK" value="10"><br><br>
+
+        <button type="button" onclick="queryIndex()">Query Index</button>
+    </form>
+    <p id="queryStatus"></p>
+
     <!-- Terminal Output -->
     <div id="terminal"></div>
 
@@ -70,7 +89,7 @@
 
         function startBuild() {
             fetch("/create_build")
-                .then(response => response.text())
+                .then(response => response.text());
         }
 
         function uploadFile() {
@@ -135,6 +154,42 @@
             })
             .catch(error => {
                 document.getElementById("graphStatus").innerText = "Error creating graph.";
+            });
+        }
+
+        function queryIndex() {
+            let indexPath = document.getElementById("indexPath").value;
+            let queryFile = document.getElementById("queryFile").value;
+            let l = document.getElementById("queryL").value;
+            let k = document.getElementById("queryK").value;
+
+            if (!indexPath || !queryFile) {
+                document.getElementById("queryStatus").innerText = "Index Path and Query File are required!";
+                return;
+            }
+
+            let requestData = {
+                index_name: indexPath,
+                query_file: queryFile,
+                l: parseInt(l),
+                k: parseInt(k)
+            };
+
+            fetch("/query_index", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(requestData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    document.getElementById("queryStatus").innerText = "Error: " + data.error;
+                } else {
+                    document.getElementById("queryStatus").innerText = "Query successful! Results: " + JSON.stringify(data);
+                }
+            })
+            .catch(error => {
+                document.getElementById("queryStatus").innerText = "Error querying index.";
             });
         }
     </script>

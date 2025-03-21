@@ -153,9 +153,7 @@ class ConstructionTrackingRunner(AbstractTrackingRunner):
                     tracker.handle_metric_event(data['value'])
 
 class QueryTrackerRunner(AbstractTrackingRunner):
-    def __init__(self, build_memory_location, search_location, port=5556, metric_handlers: List[AbstractQueryTracker]=None):
-        self.build_memory_location = build_memory_location
-        self.search_exec = search_location
+    def __init__(self, port=5556, metric_handlers: List[AbstractQueryTracker]=None):
         self.experiment_stats = dict()
         self.completed_queries = 0
         super().__init__(port=port, metric_handlers=metric_handlers)

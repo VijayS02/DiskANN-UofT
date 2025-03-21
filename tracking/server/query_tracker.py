@@ -1,10 +1,10 @@
-from tracking.lib.abstract_trackers import AbstractQueryTracker
-from tracking.lib.basic_metric_types import FrequencyTracker, ChangeOverTimeTracker
-from tracking.lib.tracker import QueryTrackerRunner
+from lib.abstract_trackers import AbstractQueryTracker
+from lib.basic_metric_types import FrequencyTracker, ChangeOverTimeTracker
+from lib.tracker import QueryTrackerRunner
 import subprocess
 import os
 
-from tracking.lib.util import download_sift, create_build
+from lib.util import download_sift, create_build
 
 class NodeVisitedDistribution(FrequencyTracker, AbstractQueryTracker):
     def __init__(self):
@@ -102,6 +102,11 @@ class MinDistanceConvergence(FrequencyTracker, AbstractQueryTracker):
         return {"x": "Portion of steps taken to reach min", "y": "Freq", "title": "Steps to Closest Node Dist" }
 
 
+def initialize_query_tracker():
+    tracker = QueryTrackerRunner(metric_handlers=[NodeVisitedDistribution(), QueryTimeDistribution(), AverageDistancePerStep(),
+                                                 MinDistanceConvergence()])
+    return tracker
+
 
 if __name__ == "__main__":
     parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
@@ -158,10 +163,7 @@ if __name__ == "__main__":
         else:
             print("Ground truth file already exists, skipping gt calculation.")
 
-    tracker = QueryTrackerRunner(build_memory_index, search_memory_index,
-                                metric_handlers=[NodeVisitedDistribution(), QueryTimeDistribution(), AverageDistancePerStep(),
-                                                 MinDistanceConvergence()])
-
+    tracker = initialize_query_tracker()
 
     experiments = [
         {

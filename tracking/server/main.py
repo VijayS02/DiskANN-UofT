@@ -93,66 +93,6 @@ def stream_func(func):
         
     return wrapper
 
-def execute_build(*args, **kwargs):
-    return stream_func(create_build)(*args, **kwargs)
-
-@app.route("/")
-def index():
-    return render_template("index.html")  # HTML UI
-
-@app.route("/create_build")
-def run_build():
-    global BUILD_DIR
-    
-    with build_lock:
-        BUILD_DIR = execute_build(PROJECT_ROOT, tracking=True, type="Release")
-    return "Build started! UI will update automatically."
-
-
-@app.route('/upload', methods=['POST'])
-def upload_file():
-    file = request.files['file']
-    os.makedirs(UPLOADS_DIR,
-                exist_ok=True)
-    file_path = os.path.join(UPLOADS_DIR, file.filename)
-    file.save(file_path)
-    return jsonify({"message": "File uploaded successfully", "path": file_path})
-
-
-@app.route('/uploads')
-def list_files():
-    files = os.listdir(UPLOADS_DIR)
-    return jsonify({"files": files})
-
-
-
-@app.route("/create_graph", methods=["POST"])
-def create_graph():
-    """Start the build process in a separate thread."""
-    data = request.get_json()
-
-    # Validate required parameters
-    required_params = ["index_name", "base_file"]
-    missing_params = [param for param in required_params if param not in data]
-
-    if missing_params:
-        return jsonify({"error": f"Missing required parameters: {', '.join(missing_params)}"}), 400
-
-    # Extract parameters
-    index_name = data["index_name"]
-    base_file = data["base_file"]
-    r = data.get("r", 32)  # Default 32
-    l_build = data.get("l_build", 50)  # Default 50
-    alpha = data.get("alpha", 1.2)  # Default 1.2
-    saturate_graph = data.get("saturate_graph", True)  # Default True
-
-    with build_lock:
-        if BUILD_DIR is None:
-            return "Build not started. Please start the build first.", 400
-
-    return construct_graph(index_name, base_file, r=r, l_build=l_build, alpha=alpha, saturate_graph=saturate_graph)
-
-
 @stream_func
 def construct_graph(index_name, base_file, r=32, l_build=50, alpha=1.2, saturate_graph=True):
     print(f"BUILD DIR: {BUILD_DIR}")
@@ -212,6 +152,57 @@ def construct_graph(index_name, base_file, r=32, l_build=50, alpha=1.2, saturate
 
     return "Graph construction complete!", 200
 
+@app.route("/")
+def index():
+    return render_template("index.html")  # HTML UI
+
+@app.route("/create_build")
+def run_build():
+    global BUILD_DIR
+    
+    with build_lock:
+        BUILD_DIR = stream_func(create_build)(PROJECT_ROOT, tracking=True, type="Release")
+    return "Build started! UI will update automatically."
+
+@app.route('/upload', methods=['POST'])
+def upload_file():
+    file = request.files['file']
+    os.makedirs(UPLOADS_DIR,
+                exist_ok=True)
+    file_path = os.path.join(UPLOADS_DIR, file.filename)
+    file.save(file_path)
+    return jsonify({"message": "File uploaded successfully", "path": file_path})
+
+@app.route('/uploads')
+def list_files():
+    files = os.listdir(UPLOADS_DIR)
+    return jsonify({"files": files})
+
+@app.route("/create_graph", methods=["POST"])
+def create_graph():
+    """Start the build process in a separate thread."""
+    data = request.get_json()
+
+    # Validate required parameters
+    required_params = ["index_name", "base_file"]
+    missing_params = [param for param in required_params if param not in data]
+
+    if missing_params:
+        return jsonify({"error": f"Missing required parameters: {', '.join(missing_params)}"}), 400
+
+    # Extract parameters
+    index_name = data["index_name"]
+    base_file = data["base_file"]
+    r = data.get("r", 32)  # Default 32
+    l_build = data.get("l_build", 50)  # Default 50
+    alpha = data.get("alpha", 1.2)  # Default 1.2
+    saturate_graph = data.get("saturate_graph", True)  # Default True
+
+    with build_lock:
+        if BUILD_DIR is None:
+            return "Build not started. Please start the build first.", 400
+
+    return construct_graph(index_name, base_file, r=r, l_build=l_build, alpha=alpha, saturate_graph=saturate_graph)
 
 @app.route("/list_indexes")
 def list_indexes():

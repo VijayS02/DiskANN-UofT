@@ -40,7 +40,7 @@ class AbstractTrackingRunner:
         for tracker in text_trackers:
             tracker.print_text_output()
 
-    def generate_graphs(self):
+    def generate_graphs(self, filename=None):
         valid_trackers = [tracker for tracker, _ in self.iterate_trackers() if tracker.has_graph()]
         if not valid_trackers:
             print("No graphs to generate.")
@@ -67,7 +67,11 @@ class AbstractTrackingRunner:
             ax.axis("off")
 
         plt.tight_layout()
-        plt.show()
+        if filename:
+            plt.savefig(filename, dpi=300, bbox_inches="tight")  # Save image
+            print(f"Graph saved to {filename}")
+        else:
+            plt.show()  # Display graph
 
     def end_experiment(self, title):
         for (tracker, metric) in self.iterate_trackers():

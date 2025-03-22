@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import useFetch from "@/util";
 import { useState } from "react";
 import { Index } from "../page";
+import Image from "next/image";
 
 export default function Queries() {
   return (
@@ -20,7 +21,9 @@ export default function Queries() {
       <div className="text-3xl m-2 my-4">Queries</div>
       <div className="space-y-4">
       <QueryForm/>
+      <Results/>
       </div> 
+      
     </div>
   );
 }
@@ -118,4 +121,47 @@ function IndexSelector({ selectedIndex, setSelectedIndex }: IndexSelectorProps) 
     </Select>
 </div>
     
+}
+
+interface ResultInfo {
+    index_name: string;
+    query_file: string;
+    l: number;
+    k: number;
+    directory: string;
+    id: string;
+}
+
+function Results(){
+  const { data, loading, error } = useFetch<{results: ResultInfo[]}>("/results_list", "GET", undefined, {
+    pollIntervalMs: 5000,
+  });
+
+
+  return <div>
+    <div className="text-2xl">
+      Query Results
+    </div>
+    {loading && <div>Loading...</div>}
+    {error && <div className="text-red-500 mt-2">{error}</div>}
+    {
+      <div className="space-y-3 grid grid-cols-2 gap-2 my-2">
+      {data && data.results.map((index, i) => (
+        <ResultView key={i} result={index}/>
+      ))}
+      </div>
+    }
+  </div>
+}
+
+function ResultView({result}: {result: ResultInfo}){
+  return <div className="border-2 border-gray-200 p-3 py-5 rounded-md">
+    <div className="text-lg font-bold">{result.id}</div>
+    <div className="text-sm text-muted-foreground">Index Title: {result.index_name}</div>
+    <div className="text-sm text-muted-foreground">Query File: {result.query_file}</div>
+    <div className="text-sm text-muted-foreground">L: {result.l}</div>
+    <div className="text-sm text-muted-foreground">K: {result.k}</div>
+    <div className="text-sm text-muted-foreground">Directory: {result.directory}</div>
+    <Image src={`/api/query_image/${result.id}`} alt="Query Result" className="w-full mx-auto" width={500} height={500}/>
+  </div>
 }

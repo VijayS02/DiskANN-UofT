@@ -1,7 +1,7 @@
 import json
 import os
 import threading
-from flask import Flask, jsonify, render_template, request
+from flask import Flask, jsonify, render_template, request, send_file
 from flask_socketio import SocketIO
 from lib.util import create_build
 from dotenv import load_dotenv
@@ -12,6 +12,7 @@ from construction_tracker import initialize_tracking_runner
 from query_tracker import initialize_query_tracker 
 import time
 import hashlib
+from datetime import datetime
 
 
 
@@ -182,6 +183,7 @@ def construct_graph(index_name, base_file, r=32, l_build=50, alpha=1.2, saturate
             "--num_threads", "1",
             "--tracking_addr", f"tcp://localhost:{tracking_port}",
             "--saturate_graph" if saturate_graph else "",
+            "--output_graph"
         ]
     
     print(command)
@@ -234,7 +236,14 @@ def trace_query(index_path, query_file, l=50, k=10):
     
     if not os.path.exists(query_file):
         return "Query file does not exist", 400
+
+    os.makedirs(RESULT_PATH, exist_ok=True)
     
+    current_time = datetime.now().strftime("%d%m%y_%H%M%S")
+    result_path = os.path.join(RESULT_PATH, f"{current_time}")
+
+    os.makedirs(result_path, exist_ok=True)
+
     # Load index info 
     with open(os.path.join(index_path, "index_info.json"), "r") as f:
         index_info = json.load(f)
@@ -292,7 +301,22 @@ def trace_query(index_path, query_file, l=50, k=10):
             }
 
 
-    return tracker.trace_program('query_run', exec_func, tracking_port=tracking_port)
+    ret = tracker.trace_program('query_run', exec_func, tracking_port=tracking_port)
+    print(ret)
+    # Create json file with data about query:
+    with open(os.path.join(result_path, "query_info.json"), "w") as f:
+        f.write(json.dumps({
+            "id": current_time,
+            "index_name": index_info["index_name"],
+            "query_file": query_file,
+            "l": l,
+            "k": k,
+            "directory": result_path
+        }))
+        
+    tracker.generate_graphs(os.path.join(result_path, 'output.png'))
+
+
 
 
 @app.route("/")
@@ -413,6 +437,28 @@ def query_graph():
     else:
         return jsonify({"error": "Build operation in progress"}), 423
         
+@app.route("/download")
+def download_file():
+    return send_file("/home/vijay/Documents/DiskANN-UofT/tracking/server/storage/indexes/csv_test/index.txt", as_attachment=True)
+
+
+@app.route("/results_list")
+def get_results():
+    results = os.listdir(RESULT_PATH)
+    results = [os.path.join(RESULT_PATH, result) for result in results]
+    results = [result for result in results if os.path.exists(os.path.join(result, "query_info.json"))]
+    results = [json.load(open(os.path.join(result, "query_info.json"))) for result in results]
+    return jsonify({"results": results})
+
+
+@app.route("/query_image/<path:id>")
+def get_image(id):
+    image_path = os.path.join(RESULT_PATH, id, "output.png")
+    
+    if not os.path.exists(image_path):
+        return 404  # Return 404 if the image doesn't exist
+    
+    return send_file(image_path, mimetype="image/png")
 
 if __name__ == "__main__":
     socketio.run(app, debug=True)

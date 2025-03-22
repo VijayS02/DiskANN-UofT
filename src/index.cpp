@@ -956,6 +956,7 @@ std::pair<uint32_t, uint32_t> Index<T, TagT, LabelT>::iterate_to_fixed_point(
         // Mark nodes visited
         for (auto id : id_scratch)
         {
+            NodeConnection(n, id);
             if (fast_iterate)
             {
                 inserted_into_pool_bs[id] = 1;
@@ -2006,6 +2007,7 @@ std::pair<uint32_t, uint32_t> Index<T, TagT, LabelT>::search(const T *query, con
     {
         if (best_L_nodes[i].id < _max_points)
         {
+            AddBestK(best_L_nodes[i].id);
             // safe because Index uses uint32_t ids internally
             // and IDType will be uint32_t or uint64_t
             indices[pos] = (IdType)best_L_nodes[i].id;

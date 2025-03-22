@@ -1,3 +1,5 @@
+from matplotlib.axes import Axes
+
 from lib.abstract_trackers import AbstractQueryTracker
 from lib.basic_metric_types import FrequencyTracker, ChangeOverTimeTracker
 from lib.tracker import QueryTrackerRunner
@@ -30,7 +32,7 @@ class NodeVisitedDistribution(FrequencyTracker, AbstractQueryTracker):
 
 class QueryTimeDistribution(FrequencyTracker, AbstractQueryTracker):
     def __init__(self):
-        super().__init__("NONE")
+        super().__init__("NONE", bins=100)
         self.edges_visited = 0
     def end_query(self, data):
         self.add_data_point(data['querytime'])
@@ -102,9 +104,39 @@ class MinDistanceConvergence(FrequencyTracker, AbstractQueryTracker):
         return {"x": "Portion of steps taken to reach min", "y": "Freq", "title": "Steps to Closest Node Dist" }
 
 
+
+class BestKParentMetric(AbstractQueryTracker):
+    def __init__(self):
+        super().__init__("node_connection")
+        self.parents = dict()
+        self.computed = False
+
+    def generate_path(self, next_node):
+        if next_node not in self.parents:
+            return [next_node]
+        else:
+            return self.generate_path(self.parents[next_node]) + [next_node]
+
+    def end_query(self, data):
+        best_k = data['best_k']
+        paths = []
+        for node in best_k:
+            paths.append(self.generate_path(node))
+        if not self.computed:
+            print(paths)
+        self.computed = True
+
+    def handle_metric_event(self, metric_data):
+        if metric_data['child'] not in self.parents:
+            self.parents[metric_data['child']] = metric_data['parent']
+
+    def end_experiment(self, title):
+        pass
+
+
 def initialize_query_tracker():
     tracker = QueryTrackerRunner(metric_handlers=[NodeVisitedDistribution(), QueryTimeDistribution(), AverageDistancePerStep(),
-                                                 MinDistanceConvergence()])
+                                                 MinDistanceConvergence(), BestKParentMetric()])
     return tracker
 
 

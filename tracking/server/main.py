@@ -352,7 +352,9 @@ def create_graph():
     else:
         return jsonify({"error": "Build operation in progress"}), 423
      
-    return construct_graph(index_name, base_file, r=r, l_build=l_build, alpha=alpha, saturate_graph=saturate_graph)
+    construct_graph(index_name, base_file, r=r, l_build=l_build, alpha=alpha, saturate_graph=saturate_graph)
+
+    return jsonify({"message": "Graph construction started! UI will update automatically."}), 200
 
 @app.route("/list_indexes")
 def list_indexes():

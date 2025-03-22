@@ -41,13 +41,9 @@ function Navbar() {
   }
   
 
-interface BuildResponse {
-    buildDir: string;
-}
-
 function CreateBuild(){
 
-    const { data, loading, error, fetchData } = useFetch<BuildResponse>(
+    const { data, loading, error, fetchData } = useFetch<any>(
         "/create_build",
         "POST"
     );

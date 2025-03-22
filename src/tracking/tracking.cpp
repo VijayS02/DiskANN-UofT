@@ -15,10 +15,11 @@ zmq::context_t MetricTracker::context(1);
 zmq::socket_t MetricTracker::socket(context, ZMQ_PUSH);
 bool MetricTracker::is_initialized = false;
 
-void MetricTracker::initialize(const std::string& connection_str)
+void MetricTracker::initialize(const std::string& connection_str, int max_qs)
 {
     if (!is_initialized)
     {
+        max_queries_details = max_qs;
         if (connection_str == "NONE")
         {
             std::cout << "TRACKING DISABLED." << std::endl;

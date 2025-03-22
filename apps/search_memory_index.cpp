@@ -286,7 +286,7 @@ int main(int argc, char **argv)
 {
     std::string data_type, dist_fn, index_path_prefix, result_path, query_file, gt_file, filter_label, label_type,
         query_filters_file, connection_str;
-    uint32_t num_threads, K;
+    uint32_t num_threads, K, max_qs_data;
     std::vector<uint32_t> Lvec;
     bool print_all_recalls, dynamic, tags, show_qps_per_thread;
     float fail_if_recall_below = 0.0f;
@@ -350,6 +350,9 @@ int main(int argc, char **argv)
         output_controls.add_options()("print_qps_per_thread", po::bool_switch(&show_qps_per_thread),
                                       "Print overall QPS divided by the number of threads in "
                                       "the output table");
+        optional_configs.add_options()("collect_queries_data,T",
+                                       po::value<uint32_t>(&max_qs_data)->default_value(-1),
+                                       program_options_utils::NUMBER_THREADS_DESCRIPTION);
 
 
         // Merge required and optional parameters
@@ -363,7 +366,7 @@ int main(int argc, char **argv)
             return 0;
         }
         po::notify(vm);
-        MetricTracker::initialize(connection_str);
+        MetricTracker::initialize(connection_str, max_qs_data);
     }
     catch (const std::exception &ex)
     {

@@ -182,8 +182,7 @@ def construct_graph(index_name, base_file, r=32, l_build=50, alpha=1.2, saturate
             "--alpha", str(alpha),
             "--num_threads", "1",
             "--tracking_addr", f"tcp://localhost:{tracking_port}",
-            "--saturate_graph" if saturate_graph else "",
-            "--output_graph"
+            "--saturate_graph" if saturate_graph else ""
         ]
     
     print(command)
@@ -215,6 +214,8 @@ def construct_graph(index_name, base_file, r=32, l_build=50, alpha=1.2, saturate
         }
 
     tracker.trace_program(index_name, trace_function, tracking_port=tracking_port)
+    # Create hash from index name and use the first 8 characters as the index id 
+    index_hash = hashlib.md5(index_name.encode()).hexdigest()[:8]
 
     # Create json file with data about index:
     with open(os.path.join(index_path, "index_info.json"), "w") as f:
@@ -225,8 +226,10 @@ def construct_graph(index_name, base_file, r=32, l_build=50, alpha=1.2, saturate
             "l_build": l_build,
             "alpha": alpha,
             "saturate_graph": saturate_graph,
-
+            "id": index_hash
         }))
+
+    tracker.generate_graphs(os.path.join(index_path, 'output.png'))
 
     return "Graph construction complete!"
 

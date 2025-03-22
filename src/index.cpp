@@ -1333,7 +1333,7 @@ template <typename T, typename TagT, typename LabelT> void Index<T, TagT, LabelT
 
         inter_insert(node, pruned_list, scratch);
 
-        if (node_ctr % 100000 == 0)
+        if (node_ctr % (visit_order.size()/10) == 0)
         {
             diskann::cout << "\r" << (100.0 * node_ctr) / (visit_order.size()) << "% of index build completed."
                           << std::flush;

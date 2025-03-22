@@ -7,16 +7,17 @@ import { useEffect, useRef, useState } from "react";
 import Graph from "graphology";
 import Sigma from "sigma";
 import FA2LayoutSupervisor from "graphology-layout-forceatlas2/worker";
+import {
+    Table,
+    TableBody,
+    TableCaption,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+  } from "@/components/ui/table"
 
 export default function ResultDisplay({id} : {id: string}) {
-        function Stat({name, value} : {name: string, value: string}) {
-            return <div>
-                <div className="text-muted-foreground">{name}</div>
-                <div className="text-sm">{value}</div>
-            </div>
-        }
-
-
         const { data, loading, error } = useFetch< ResultInfo>(`/query_json/${id}`);
         console.log(data)
         return (
@@ -26,22 +27,51 @@ export default function ResultDisplay({id} : {id: string}) {
             {error && <div className="text-red-500 mt-2">{error}</div>}
             {data && <div>
                 <div className="grid grid-cols-2 gap-2">
-                    <div className="grid gap-3 col-span-full grid-cols-2 mb-6">
-                        <Stat name="Index Name" value={data.index_name}/>
-                        <Stat name="Query File" value={data.query_file}/>
-                        <Stat name="L" value={data.l.toString()}/>
-                        <Stat name="K" value={data.k.toString()}/>
-                        <Stat name="Directory" value={data.directory}/>
+                    <div className="col-span-full">
+                        <StatDisplay res={data}/>
                     </div>
                     <Image src={`/api/query_image/${id}`} className="w-full" alt="Query Image" width={500} height={500} />
-
-                {data.data.BestKParentMetric && <BestKParentDisplay data={data.data.BestKParentMetric}/>}
+                    {data.data.BestKParentMetric && <BestKParentDisplay data={data.data.BestKParentMetric}/>}
                 </div>
                 
             </div>}
         </div>
     )
 }
+
+
+function StatDisplay({res} : {res: ResultInfo}) {
+    return <Table className="px-3">
+    <TableCaption>Query settings.</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead className="w-[100px]">Parameter</TableHead>
+        <TableHead className="text-right"></TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">Index Name</TableCell>
+        <TableCell className="text-right">{res.index_name}</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Query File</TableCell>
+        <TableCell className="text-right">{res.query_file}</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">K (In KNN)</TableCell>
+        <TableCell className="text-right">{res.k}</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">L Memory Scratch Size</TableCell>
+        <TableCell className="text-right">{res.l}</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+ 
+}
+
+
 
 function BestKParentDisplay({ data } : {data: Number[][][]}) {
     const containerRef = useRef<HTMLDivElement | null>(null);
@@ -73,7 +103,7 @@ function BestKParentDisplay({ data } : {data: Number[][][]}) {
                     // Add node if not exists
                     if (!graph.hasNode(nodeId)) {
                         graph.addNode(nodeId, {
-                            label: `Node ${nodeId}`,
+                            label: `${nodeId}`,
                             size: 5,
                             color: "#007bff", // Default blue
                             x: Math.random() * 1000,

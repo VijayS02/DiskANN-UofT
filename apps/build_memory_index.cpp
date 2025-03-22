@@ -122,7 +122,7 @@ int main(int argc, char **argv)
         use_opq = vm["use_opq"].as<bool>();
         saturate_graph = vm["saturate_graph"].as<bool>();
         output_graph = vm["output_graph"].as<bool>();
-        MetricTracker::initialize(connection_str);
+        MetricTracker::initialize(connection_str, -1);
     }
     catch (const std::exception &ex)
     {

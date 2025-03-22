@@ -14,12 +14,15 @@ private:
   static zmq::context_t context;
   static bool is_initialized;
 
-  MetricTracker() {}; // Private constructor to prevent instantiation
+  MetricTracker () {}; // Private constructor to prevent instantiation
 
 public:
-  static void initialize(const std::string& connection_str);
+  static int max_queries_details;
+  static void initialize(const std::string& connection_str, int max_qs);
   static void Track(const std::string& metric_name, nlohmann::json value);
 };
+
+inline int MetricTracker::max_queries_details = -1;
 #else
 class MetricTracker
 {
@@ -28,7 +31,8 @@ private:
   MetricTracker() {};
 
 public:
-  static void initialize(const std::string& connection_str) {};
+  static constexpr uint32_t max_queries_details = -1;
+  static void initialize(const std::string& connection_str, uint32_t max_qs) {};
   static void Track(const std::string& metric_name, nlohmann::json value) {}
 };
 #endif

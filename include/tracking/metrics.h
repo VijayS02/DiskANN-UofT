@@ -7,8 +7,7 @@
 #include "tracking.h"
 
 inline std::vector<uint32_t> best_k = {};
-inline uint32_t best_k_counter = 0;
-inline uint32_t max_best_k = 10;
+inline int best_k_counter = 0;
 
 inline void TestTrack(int number)
 {
@@ -44,7 +43,7 @@ inline void AddConstructionPathLength(uint32_t number)
 
 inline void EndQuery(float query_time)
 {
-    if (best_k_counter < max_best_k)
+    if (best_k_counter < MetricTracker::max_queries_details)
     {
         query_time = 0;
     }
@@ -90,7 +89,7 @@ inline void NodeInfo(uint32_t node, std::vector<float> neighbor_distances)
 
 inline void NodeConnection(uint32_t parent, uint32_t child)
 {
-    if (best_k_counter < max_best_k)
+    if (best_k_counter < MetricTracker::max_queries_details)
     {
         const nlohmann::json jsonData = {
             {"parent", parent},
@@ -104,7 +103,7 @@ inline void NodeConnection(uint32_t parent, uint32_t child)
 
 inline void AddBestK(uint32_t id)
 {
-    if (best_k_counter < max_best_k)
+    if (best_k_counter < MetricTracker::max_queries_details)
     {
         best_k.push_back(id);
     }

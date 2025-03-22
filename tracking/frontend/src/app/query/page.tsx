@@ -1,9 +1,18 @@
 'use client'
 import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
+import {
+    Select,
+    SelectContent,
+    SelectGroup,
+    SelectItem,
+    SelectLabel,
+    SelectTrigger,
+    SelectValue,
+  } from "@/components/ui/select"
 import { Button } from "@/components/ui/button";
 import useFetch from "@/util";
 import { useState } from "react";
+import { Index } from "../page";
 
 export default function Queries() {
   return (
@@ -42,18 +51,11 @@ const QueryForm: React.FC = () => {
       <div className="w-full border-2 border-gray-200 p-3 py-5 rounded-md">
           <div className="text-xl mb-2 mx-1">Create Query</div>
           <div className="grid grid-cols-2 gap-4">
-              <div>
-                  <div className="text-muted-foreground mb-1 mx-1">Index Name</div>
-                  <Input 
-                      placeholder="Enter index name"
-                      value={indexName}
-                      onChange={(e) => setIndexName(e.target.value)}
-                  />
-              </div>
+              <IndexSelector selectedIndex={indexName} setSelectedIndex={setIndexName} />
               <div>
                   <div className="text-muted-foreground mb-1 mx-1">Query File</div>
                   <Input 
-                      placeholder="Enter base file path"
+                      placeholder="Enter query file path"
                       value={queryFile}
                       onChange={(e) => setQueryFile(e.target.value)}
                   />
@@ -85,7 +87,35 @@ const QueryForm: React.FC = () => {
               </div>
           </div>
           {error && <div className="text-red-500 mt-2">{error}</div>}
-          {data && <div className="text-green-700 mt-2">Graph Creation initiated!</div>}
+          {data && <div className="text-green-700 mt-2">Query initiated!</div>}
       </div>
   );
 };
+
+interface IndexSelectorProps {
+    selectedIndex: string;
+    setSelectedIndex: (value: string) => void;
+}
+
+function IndexSelector({ selectedIndex, setSelectedIndex }: IndexSelectorProps) {
+    const { data, loading, error } = useFetch<{indexes: Index[]}>("/list_indexes", "GET", undefined, {
+        pollIntervalMs: 5000,
+      });
+
+    return <div>
+    <div className="text-muted-foreground mb-1 mx-1">Index Name</div>
+    <Select disabled={loading || data?.indexes.length == 0} value={selectedIndex} onValueChange={setSelectedIndex}>
+      <SelectTrigger className="w-full">
+        <SelectValue placeholder="Select an index" />
+      </SelectTrigger>
+      <SelectContent>
+          {data?.indexes.map((index) => (
+            <SelectItem key={index.index_name} value={index.index_name}>
+              {index.index_name}
+            </SelectItem>
+          ))}
+      </SelectContent>
+    </Select>
+</div>
+    
+}

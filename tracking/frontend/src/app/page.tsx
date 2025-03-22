@@ -116,7 +116,7 @@ const ConstructForm: React.FC = () => {
   );
 };
 
-interface Index {
+export interface Index {
   index_name: string;
   base_file: string;
   r: number;

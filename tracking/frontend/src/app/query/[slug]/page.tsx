@@ -1,4 +1,4 @@
-import RenderGraph from "./graphRenderer"
+import ResultDisplay from "./resultDisplay"
 
 export default async function Page({
     params,
@@ -8,8 +8,5 @@ export default async function Page({
  
  
     const { slug } = await params
-    return <>
-    <div>My Post: {slug}</div>
-    <RenderGraph/>
-    </>
+    return <ResultDisplay id={slug}/>
   }

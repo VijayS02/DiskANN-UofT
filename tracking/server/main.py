@@ -224,10 +224,11 @@ def construct_graph(index_name, base_file, r=32, l_build=50, alpha=1.2, saturate
             "r": r,
             "l_build": l_build,
             "alpha": alpha,
-            "saturate_graph": saturate_graph
+            "saturate_graph": saturate_graph,
+
         }))
 
-    return "Graph construction complete!", 200
+    return "Graph construction complete!"
 
 @stream_func
 def trace_query(index_path, query_file, l=50, k=10):
@@ -303,6 +304,9 @@ def trace_query(index_path, query_file, l=50, k=10):
 
     ret = tracker.trace_program('query_run', exec_func, tracking_port=tracking_port)
     print(ret)
+    tracker.generate_graphs(os.path.join(result_path, 'output.png'))
+
+    json_data = tracker.generate_json()
     # Create json file with data about query:
     with open(os.path.join(result_path, "query_info.json"), "w") as f:
         f.write(json.dumps({
@@ -311,10 +315,11 @@ def trace_query(index_path, query_file, l=50, k=10):
             "query_file": query_file,
             "l": l,
             "k": k,
-            "directory": result_path
+            "directory": result_path,
+            "data": json_data
         }))
         
-    tracker.generate_graphs(os.path.join(result_path, 'output.png'))
+    return "Query complete!"
 
 
 
@@ -459,6 +464,15 @@ def get_image(id):
         return 404  # Return 404 if the image doesn't exist
     
     return send_file(image_path, mimetype="image/png")
+
+@app.route("/query_json/<path:id>")
+def get_json(id):
+    json_path = os.path.join(RESULT_PATH, id, "query_info.json")
+    
+    if not os.path.exists(json_path):
+        return 404
+    
+    return jsonify(json.load(open(json_path)))
 
 if __name__ == "__main__":
     socketio.run(app, debug=True)

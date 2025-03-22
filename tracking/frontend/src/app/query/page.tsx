@@ -14,6 +14,7 @@ import useFetch from "@/util";
 import { useState } from "react";
 import { Index } from "../page";
 import Image from "next/image";
+import Link from "next/link";
 
 export default function Queries() {
   return (
@@ -123,13 +124,14 @@ function IndexSelector({ selectedIndex, setSelectedIndex }: IndexSelectorProps) 
     
 }
 
-interface ResultInfo {
+export interface ResultInfo {
     index_name: string;
     query_file: string;
     l: number;
     k: number;
     directory: string;
     id: string;
+    data: any;
 }
 
 function Results(){
@@ -155,13 +157,30 @@ function Results(){
 }
 
 function ResultView({result}: {result: ResultInfo}){
+  function Stat({name, value} : {name: string, value: string}) {
+    return <div>
+        <div className="text-muted-foreground">{name}</div>
+        <div className="text-sm">{value}</div>
+        </div>
+    }
+
   return <div className="border-2 border-gray-200 p-3 py-5 rounded-md">
+    <div className="flex">
     <div className="text-lg font-bold">{result.id}</div>
-    <div className="text-sm text-muted-foreground">Index Title: {result.index_name}</div>
-    <div className="text-sm text-muted-foreground">Query File: {result.query_file}</div>
-    <div className="text-sm text-muted-foreground">L: {result.l}</div>
-    <div className="text-sm text-muted-foreground">K: {result.k}</div>
-    <div className="text-sm text-muted-foreground">Directory: {result.directory}</div>
+    <Button size="sm" className="ml-auto" asChild>
+      <Link href={`/query/${result.id}`}>
+        View 
+      </Link>
+    </Button>
+    </div>
+    <div className="grid-cols-1 grid gap-x-1 gap-y-3 mb-4">
+      <Stat name="Index Name" value={result.index_name}/>
+      <Stat name="Query File" value={result.query_file}/>
+      <Stat name="L" value={result.l.toString()}/>
+      <Stat name="K" value={result.k.toString()}/>
+      {/* <Stat name="Directory" value={result.directory}/> */}
+    </div>
+    
     <Image src={`/api/query_image/${result.id}`} alt="Query Result" className="w-full mx-auto" width={500} height={500}/>
   </div>
 }

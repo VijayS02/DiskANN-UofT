@@ -32,7 +32,7 @@ class NodeVisitedDistribution(FrequencyTracker, AbstractQueryTracker):
 
 class QueryTimeDistribution(FrequencyTracker, AbstractQueryTracker):
     def __init__(self):
-        super().__init__("NONE", bins=100)
+        super().__init__("NONE", bins=30)
         self.edges_visited = 0
     def end_query(self, data):
         self.add_data_point(data['querytime'])
@@ -107,9 +107,10 @@ class MinDistanceConvergence(FrequencyTracker, AbstractQueryTracker):
 
 class BestKParentMetric(AbstractQueryTracker):
     def __init__(self):
-        super().__init__("node_connection")
+        super().__init__("node_connection", json="BestKParentMetric")
         self.parents = dict()
         self.computed = False
+        self.results = []
 
     def generate_path(self, next_node):
         if next_node not in self.parents:
@@ -118,13 +119,12 @@ class BestKParentMetric(AbstractQueryTracker):
             return self.generate_path(self.parents[next_node]) + [next_node]
 
     def end_query(self, data):
-        best_k = data['best_k']
-        paths = []
-        for node in best_k:
-            paths.append(self.generate_path(node))
-        if not self.computed:
-            print(paths)
-        self.computed = True
+        if len(data['best_k']) != 0:
+            best_k = data['best_k']
+            paths = []
+            for node in best_k:
+                paths.append(self.generate_path(node))
+            self.results.append(paths)
 
     def handle_metric_event(self, metric_data):
         if metric_data['child'] not in self.parents:
@@ -132,6 +132,9 @@ class BestKParentMetric(AbstractQueryTracker):
 
     def end_experiment(self, title):
         pass
+
+    def get_json(self):
+        return self.results
 
 
 def initialize_query_tracker():

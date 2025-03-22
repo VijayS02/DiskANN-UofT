@@ -4,10 +4,11 @@ from matplotlib.axes import Axes
 
 
 class AbstractMetricTracker:
-    def __init__(self, metric: str, text: bool=False, graph: bool=False):
+    def __init__(self, metric: str, text: bool=False, graph: bool=False, json: str=None):
         self.metric = metric
         self.text = text
         self.graph = graph
+        self.json_key = json
 
     def get_metric_name(self) -> str:
         return self.metric
@@ -59,10 +60,20 @@ class AbstractMetricTracker:
         """
         pass
 
+    def has_json(self):
+        return self.json_key is not None
+    
+    def get_json_key(self):
+        return self.json_key
+    
+    @abstractmethod
+    def get_json(self):
+        pass
+
 class AbstractQueryTracker(AbstractMetricTracker):
 
-    def __init__(self, metric="NONE", graph=False, text=False):
-        super().__init__(metric=metric, graph=graph, text=text)
+    def __init__(self, metric="NONE", graph=False, text=False, json=None):
+        super().__init__(metric=metric, graph=graph, text=text, json=json)
         self.experiment_info = dict()
 
     def configure_experiment_stats(self, data):

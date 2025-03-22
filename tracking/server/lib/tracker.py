@@ -139,6 +139,13 @@ class AbstractTrackingRunner:
         self.end_experiment(title)
 
         return return_v
+    
+    def generate_json(self):
+        json_trackers = [tracker for tracker, _ in self.iterate_trackers() if tracker.has_json()]
+        data = dict()
+        for tracker in json_trackers:
+            data[tracker.get_json_key()] = tracker.get_json()
+        return data
 
 
 class ConstructionTrackingRunner(AbstractTrackingRunner):

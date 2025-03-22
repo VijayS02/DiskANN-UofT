@@ -407,7 +407,8 @@ def query_graph():
             build_lock.release()
             return "Build not started. Please start the build first.", 400
         build_lock.release()
-        return trace_query(index_path, query_file, l=l, k=k)
+        trace_query(index_path, query_file, l=l, k=k)
+        return jsonify({"message": "Query started! UI will update automatically."}), 200
         
     else:
         return jsonify({"error": "Build operation in progress"}), 423

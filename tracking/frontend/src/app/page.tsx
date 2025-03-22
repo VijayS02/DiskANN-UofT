@@ -4,6 +4,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import useFetch from "@/util";
 import { useState } from "react";
+import Link from "next/link";
 
 export default function Home() {
   return (
@@ -123,6 +124,7 @@ export interface Index {
   l_build: number;
   alpha: number;
   saturate_graph: boolean;
+  id: string;
 }
 
 function AvailableIndexes(){
@@ -140,7 +142,14 @@ function AvailableIndexes(){
     {
       data && data.indexes.map((index, i) => (
         <div key={i} className="border-2 border-gray-200 p-3 py-5 rounded-md my-2">
+          <div className="flex justify-between">
           <div className="text-xl font-bold mb-2 mx-1">{index.index_name}</div>
+          <Button variant={"outline"} size={"lg"} asChild>
+            <Link href={`/index/${index.index_name}`}>
+              View
+            </Link>
+          </Button>
+          </div>
           <div className="grid grid-cols-2 gap-4">
               <div>
                   <div className="text-muted-foreground mb-1 mx-1">Base File</div>

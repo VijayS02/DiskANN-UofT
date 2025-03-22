@@ -173,14 +173,14 @@ function ResultView({result}: {result: ResultInfo}){
       </Link>
     </Button>
     </div>
-    <div className="grid-cols-1 grid gap-x-1 gap-y-3 mb-4">
+    <div className="grid-cols-2 grid gap-x-1 gap-y-3 mb-4">
       <Stat name="Index Name" value={result.index_name}/>
       <Stat name="Query File" value={result.query_file}/>
-      <Stat name="L" value={result.l.toString()}/>
-      <Stat name="K" value={result.k.toString()}/>
+      <Stat name="L (Scratch size)" value={result.l.toString()}/>
+      <Stat name="K (Number of neighbors)" value={result.k.toString()}/>
       {/* <Stat name="Directory" value={result.directory}/> */}
     </div>
     
-    <Image src={`/api/query_image/${result.id}`} alt="Query Result" className="w-full mx-auto" width={500} height={500}/>
+    {/* <Image src={`/api/query_image/${result.id}`} alt="Query Result" className="w-full mx-auto" width={500} height={500}/> */}
   </div>
 }

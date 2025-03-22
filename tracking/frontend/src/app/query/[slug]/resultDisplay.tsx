@@ -41,8 +41,7 @@ export default function ResultDisplay({id} : {id: string}) {
 
 
 function StatDisplay({res} : {res: ResultInfo}) {
-    return <Table className="px-3">
-    <TableCaption>Query settings.</TableCaption>
+    return <div className="border border-gray-200 rounded"><Table className="px-3">
     <TableHeader>
       <TableRow>
         <TableHead className="w-[100px]">Parameter</TableHead>
@@ -67,7 +66,7 @@ function StatDisplay({res} : {res: ResultInfo}) {
         <TableCell className="text-right">{res.l}</TableCell>
       </TableRow>
     </TableBody>
-  </Table>
+  </Table></div>
  
 }
 

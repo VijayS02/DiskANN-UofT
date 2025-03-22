@@ -1,4 +1,4 @@
-import RenderGraph from "./graphRenderer"
+import IndexInfo from "./indexInfo"
 
 export default async function Page({
     params,
@@ -9,7 +9,6 @@ export default async function Page({
  
     const { slug } = await params
     return <>
-    <div>My Post: {slug}</div>
-    <RenderGraph/>
+    <IndexInfo index_name={slug}/>
     </>
   }

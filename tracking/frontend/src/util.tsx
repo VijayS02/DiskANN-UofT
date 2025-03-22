@@ -41,7 +41,7 @@ const useFetch = <T,>(
                     setPostData(bodyData); // Store latest post data
                 }
 
-                const response = await fetch(url, requestOptions);
+                const response = await fetch("/api" + url, requestOptions);
                 if (!response.ok) {
                     throw new Error(`${response.status}`);
                 }

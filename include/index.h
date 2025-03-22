@@ -53,6 +53,10 @@ template <typename T, typename TagT = uint32_t, typename LabelT = uint32_t> clas
      **************************************************************************/
 
   public:
+    std::unique_ptr<AbstractGraphStore>& getGraphStore() {
+        return _graph_store;
+    }
+
     // Constructor for Bulk operations and for creating the index object solely
     // for loading a prexisting index.
     DISKANN_DLLEXPORT Index(const IndexConfig &index_config, std::shared_ptr<AbstractDataStore<T>> data_store,
@@ -313,6 +317,8 @@ template <typename T, typename TagT = uint32_t, typename LabelT = uint32_t> clas
 
     void initialize_query_scratch(uint32_t num_threads, uint32_t search_l, uint32_t indexing_l, uint32_t r,
                                   uint32_t maxc, size_t dim);
+
+
 
     // Do not call without acquiring appropriate locks
     // call public member functions save and load to invoke these.

@@ -25,12 +25,35 @@
 
 namespace po = boost::program_options;
 
+void saveGraphToFile(const std::vector<std::vector<uint32_t>> &graph, const std::string &filename)
+{
+    std::ofstream file(filename);
+    if (!file)
+    {
+        std::cerr << "Error: Unable to open file " << filename << std::endl;
+        return;
+    }
+
+    for (size_t i = 0; i < graph.size(); i++)
+    {
+        file << i; // Node index
+        for (const auto &neighbor : graph[i])
+        {
+            file << "," << neighbor;
+        }
+        file << "\n";
+    }
+
+    file.close();
+    std::cout << "Graph saved to " << filename << std::endl;
+}
+
 int main(int argc, char **argv)
 {
     std::string data_type, dist_fn, data_path, index_path_prefix, label_file, universal_label, label_type, connection_str;
     uint32_t num_threads, R, L, Lf, build_PQ_bytes;
     float alpha;
-    bool use_pq_build, use_opq, saturate_graph;
+    bool use_pq_build, use_opq, saturate_graph, output_graph;
 
     po::options_description desc{
         program_options_utils::make_program_description("build_memory_index", "Build a memory-based DiskANN index.")};
@@ -79,6 +102,9 @@ int main(int argc, char **argv)
         optional_configs.add_options()("tracking_addr", po::value<std::string>(&connection_str)->default_value("NONE"),
                                        program_options_utils::LABEL_TYPE_DESCRIPTION);
 
+        optional_configs.add_options()("output_graph", po::bool_switch()->default_value(false),
+                                       program_options_utils::LABEL_TYPE_DESCRIPTION);
+
 
 
         // Merge required and optional parameters
@@ -95,6 +121,7 @@ int main(int argc, char **argv)
         use_pq_build = (build_PQ_bytes > 0);
         use_opq = vm["use_opq"].as<bool>();
         saturate_graph = vm["saturate_graph"].as<bool>();
+        output_graph = vm["output_graph"].as<bool>();
         MetricTracker::initialize(connection_str);
     }
     catch (const std::exception &ex)
@@ -165,6 +192,21 @@ int main(int argc, char **argv)
         auto index = index_factory.create_instance();
         index->build(data_path, data_num, filter_params);
         index->save(index_path_prefix.c_str());
+        if (output_graph)
+        {
+            auto *diskIndex = dynamic_cast<diskann::Index<float, uint32_t, uint32_t> *>(index.get());
+            if (!diskIndex)
+            {
+                throw std::runtime_error("Error: index is not a diskannindex.");
+            }
+            auto *graphStore = dynamic_cast<diskann::InMemGraphStore *>(diskIndex->getGraphStore().get());
+            if (!graphStore)
+            {
+                throw std::runtime_error("Error: _graph_store is not an InMemGraphStore instance.");
+            }
+            auto graph = graphStore->get_graph();
+            saveGraphToFile(graph, index_path_prefix + ".txt");
+        }
         index.reset();
         EndConstruction();
         return 0;

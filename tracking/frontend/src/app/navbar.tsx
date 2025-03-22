@@ -20,7 +20,7 @@ function Navbar() {
     });
     
     return (
-      <div className="w-full flex justify-center sticky top-0 h-16 shadow p-2">
+      <div className="w-full z-[9] bg-background/20 backdrop-blur flex justify-center sticky top-0 h-16 shadow p-2">
         <div className="container flex justify-between">
           <div className="flex space-x-4">
             <div className="text-2xl my-auto">

@@ -10,7 +10,7 @@ from lib.util import download_sift, create_build
 
 class NodeVisitedDistribution(FrequencyTracker, AbstractQueryTracker):
     def __init__(self):
-        super().__init__("visited_node", bins=None)
+        super().__init__("visited_distribution", metrics=["visited_node"], bins=None, label="Node Visited Distribution")
         self.edges_visited = 0
 
     def end_query(self, _):
@@ -32,7 +32,7 @@ class NodeVisitedDistribution(FrequencyTracker, AbstractQueryTracker):
 
 class QueryTimeDistribution(FrequencyTracker, AbstractQueryTracker):
     def __init__(self):
-        super().__init__("NONE", bins=30)
+        super().__init__("query_time_dist", metrics=["NONE"], bins=30, label="Query Time Distribution")
         self.edges_visited = 0
     def end_query(self, data):
         self.add_data_point(data['querytime'])
@@ -51,7 +51,7 @@ class QueryTimeDistribution(FrequencyTracker, AbstractQueryTracker):
 
 class AverageDistancePerStep(ChangeOverTimeTracker, AbstractQueryTracker):
     def __init__(self):
-        super().__init__("visited_node", average=True)
+        super().__init__('avg_dist_per_step', metrics=["visited_node"], average=True, label="Average Distance Per Step")
         self.pos = 0
         self.store = []
     def end_query(self, data):
@@ -75,7 +75,7 @@ class AverageDistancePerStep(ChangeOverTimeTracker, AbstractQueryTracker):
 
 class MinDistanceConvergence(FrequencyTracker, AbstractQueryTracker):
     def __init__(self):
-        super().__init__("visited_node",bins=50)
+        super().__init__('min_dist_convg', metrics=["visited_node"],bins=50, label="Min Distance Convergence")
         self.min_dist = 999999999999
         self.index = 0
         self.min_index = -1
@@ -107,7 +107,7 @@ class MinDistanceConvergence(FrequencyTracker, AbstractQueryTracker):
 
 class BestKParentMetric(JsonMetricTracker, AbstractQueryTracker):
     def __init__(self):
-        super().__init__("node_connection", json="BestKParentMetric")
+        super().__init__("BestKParentMetric", "node_connection", label="Best K Parent Metric")
         self.parents = dict()
         self.computed = False
         self.results = []
@@ -137,13 +137,16 @@ class BestKParentMetric(JsonMetricTracker, AbstractQueryTracker):
         return self.results
 
 
-METRICS = {
-    "NodeVisitedDistribution": {"label": "Nodes Visited Distribution", "class": NodeVisitedDistribution},
-    "QueryTimeDistribution": {"label": "Query Time Distribution", "class": QueryTimeDistribution},
-    "AverageDistancePerStep": {"label": "Average Distance Per Step", "class": AverageDistancePerStep},
-    "MinDistanceConvergence": {"label": "Min Distance Convergence", "class": MinDistanceConvergence},
-    "BestKParentMetric": {"label": "Best K Parent Metric", "class": BestKParentMetric},
-}
+METRIC_LIST = [
+    NodeVisitedDistribution,
+    QueryTimeDistribution,
+    AverageDistancePerStep,
+    MinDistanceConvergence,
+    BestKParentMetric
+]
+
+
+METRICS = {metric().get_id(): {"label": metric().get_label(), "class": metric} for metric in METRIC_LIST}
 
 def initialize_query_tracker(selected_metrics):
     metric_handlers = [METRICS[metric]['class']() for metric in selected_metrics if metric in METRICS]

@@ -1,14 +1,26 @@
 from abc import abstractmethod
+from typing import List
 
 from matplotlib.axes import Axes
 
 
 class AbstractMetricTracker:
-    def __init__(self, metric: str):
-        self.metric = metric
+    def __init__(self, id, metrics: List[str]=[], label="Label"):
+        if not metrics:
+            self.metrics = [id]
+        else:
+            self.metrics = metrics
+        self.id = id
+        self.label = label
 
-    def get_metric_name(self) -> str:
-        return self.metric
+    def get_label(self):
+        return self.label
+    
+    def get_id(self):
+        return self.id
+    
+    def get_subscribed_metrics(self) -> List[str]:
+        return self.metrics
 
     @abstractmethod
     def handle_metric_event(self, metric_data):
@@ -33,9 +45,9 @@ class AbstractMetricTracker:
 
 class JsonMetricTracker(AbstractMetricTracker):
 
-    def __init__(self, metric: str, json: str):
-        super().__init__(metric)
+    def __init__(self, json: str, *args, **kwargs):
         self.json_key = json
+        super().__init__(*args, **kwargs)
 
     @abstractmethod
     def get_json(self):
@@ -45,8 +57,8 @@ class JsonMetricTracker(AbstractMetricTracker):
         return self.json_key
 
 class GraphMetricTracker(AbstractMetricTracker):
-    def __init__(self, metric: str):
-        super().__init__(metric)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
     @abstractmethod
     def generate_subplot(self, ax: Axes):
@@ -54,8 +66,8 @@ class GraphMetricTracker(AbstractMetricTracker):
 
 
 class TextMetricTracker(AbstractMetricTracker):
-    def __init__(self, metric: str):
-        super().__init__(metric)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
     @abstractmethod
     def print_text_output(self):
@@ -64,8 +76,8 @@ class TextMetricTracker(AbstractMetricTracker):
 
 class AbstractQueryTracker(AbstractMetricTracker):
 
-    def __init__(self, metric):
-        super().__init__(metric)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.experiment_info = dict()
 
     def configure_experiment_stats(self, data):

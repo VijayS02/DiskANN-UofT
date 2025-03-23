@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from typing import List
 
 import numpy as np
 
@@ -35,8 +36,8 @@ class FrequencyTracker(GraphMetricTracker, ABC):
             where keys are experiment titles and values are lists of data points.
         bins (int): Number of bins to use when plotting histograms.
     """
-    def __init__(self, metric: str, bins='auto'):
-        super().__init__(metric)
+    def __init__(self, *args, bins='auto', **kwargs):
+        super().__init__(*args, **kwargs)
         self.counts = []
         self.experiments = dict()
         self.bins = bins
@@ -100,8 +101,8 @@ class ChangeOverTimeTracker(GraphMetricTracker, ABC):
         counts (List[int]): A list tracking the number of data points contributing to each time step
             (used only when `average=True`).
     """
-    def __init__(self, metric: str, average=False):
-        super().__init__(metric)
+    def __init__(self, *args, average=False, **kwargs):
+        super().__init__(*args, **kwargs)
         self.time_series = []
         self.experiments = dict()
         self.average = average

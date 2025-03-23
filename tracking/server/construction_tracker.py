@@ -18,7 +18,7 @@ from lib.util import download_sift, create_build
 
 class AddEdgeCountTracker(FrequencyTracker, AbstractConstructionTracker):
     def __init__(self):
-        super().__init__("add_edge_count", bins=None)
+        super().__init__("add_edge_count", bins=None, label="Edge Utilization Tracker")
         self.const_data = dict()
         self.total_edges = 0
         self.edge_usage = dict()
@@ -46,7 +46,7 @@ class AddEdgeCountTracker(FrequencyTracker, AbstractConstructionTracker):
 
 class ConstructionPathLengthFreqTracker(FrequencyTracker, AbstractConstructionTracker):
     def __init__(self):
-        super().__init__("add_construction_path_length")
+        super().__init__("const_path_freq", metrics=["add_construction_path_length"], label="Construction Path Length Tracker")
 
     def has_text_output(self):
         return False
@@ -63,13 +63,9 @@ class ConstructionPathLengthFreqTracker(FrequencyTracker, AbstractConstructionTr
     def handle_metric_event(self, metric_data):
         self.add_data_point(metric_data)
 
-    def get_metric_name(self) -> str:
-        return "add_construction_path_length"
-
-
 class ConstructionPathLengthOverTimeTracker(ChangeOverTimeTracker, AbstractConstructionTracker):
     def __init__(self):
-        super().__init__("add_construction_path_length")
+        super().__init__("const_path_over_time", metrics=["add_construction_path_length"], label="Construction Path Length Over Time Tracker")
 
     def get_graph_props(self):
         return {"x": "Query", "y": "Number of Hops", "title": "Construction Path Length Over Time"}
@@ -81,13 +77,10 @@ class ConstructionPathLengthOverTimeTracker(ChangeOverTimeTracker, AbstractConst
     def handle_metric_event(self, metric_data):
         self.add_data_point(metric_data)
 
-    def get_metric_name(self) -> str:
-        return "add_construction_path_length"
-
 
 class NodeDistanceTracker(GraphMetricTracker, AbstractConstructionTracker):
     def __init__(self):
-        super().__init__("node_info")
+        super().__init__("node_info", label="Node Distance Tracker")
         self.node_distances = defaultdict(list)  # Stores distances per neighbor index
         self.data = dict()
         self.zeros = 0
@@ -146,13 +139,15 @@ class NodeDistanceTracker(GraphMetricTracker, AbstractConstructionTracker):
 
 
 
+METRIC_LIST = [
+    AddEdgeCountTracker,
+    ConstructionPathLengthFreqTracker,
+    ConstructionPathLengthOverTimeTracker,
+    NodeDistanceTracker,
+]
 
-METRICS = {
-    "add_edge_count": {"label": "Edge utilization tracker", "class": AddEdgeCountTracker},
-    "add_construction_path_length": {"label": "Construction path length tracker", "class": ConstructionPathLengthFreqTracker},
-    "add_construction_path_length_ot": {"label": "Construction path length over time tracker", "class": ConstructionPathLengthOverTimeTracker},
-    "node_info": {"label": "Node distance tracker", "class": NodeDistanceTracker},
-}
+
+METRICS = {metric().get_id(): {"label": metric().get_label(), "class": metric} for metric in METRIC_LIST}
 
 def initialize_construction_tracker(selected_metrics):
 

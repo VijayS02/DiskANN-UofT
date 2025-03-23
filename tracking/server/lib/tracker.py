@@ -19,7 +19,8 @@ class AbstractTrackingRunner:
         self.metric_handlers : Dict[str, List[AbstractMetricTracker]] = dict()
         self.stop_tracking = False
         for metric_handler in metric_handlers:
-            self.metric_handlers.setdefault(metric_handler.get_metric_name(), []).append(metric_handler)
+            for metric_name in metric_handler.get_subscribed_metrics():
+                self.metric_handlers.setdefault(metric_name, []).append(metric_handler)
 
 
     @abstractmethod
@@ -33,15 +34,22 @@ class AbstractTrackingRunner:
             for tracker in tracker_list:
                 yield tracker, metric
 
+    def iterate_unique_trackers(self):
+        trackers = set()
+        for tracker, metric in self.iterate_trackers():
+            if tracker.get_id() not in trackers:
+                trackers.add(tracker.get_id())
+                yield tracker, metric
+
 
     def generate_text(self):
-        text_trackers = [tracker for tracker, _ in self.iterate_trackers() if isinstance(tracker, TextMetricTracker)]
+        text_trackers = [tracker for tracker, _ in self.iterate_unique_trackers() if isinstance(tracker, TextMetricTracker)]
 
         for tracker in text_trackers:
             tracker.print_text_output()
 
     def generate_graphs(self, filename=None):
-        valid_trackers = [tracker for tracker, _ in self.iterate_trackers() if isinstance(tracker, GraphMetricTracker)]
+        valid_trackers = [tracker for tracker, _ in self.iterate_unique_trackers() if isinstance(tracker, GraphMetricTracker)]
         if not valid_trackers:
             print("No graphs to generate.")
             return
@@ -74,7 +82,7 @@ class AbstractTrackingRunner:
             plt.show()  # Display graph
 
     def end_experiment(self, title):
-        for (tracker, metric) in self.iterate_trackers():
+        for (tracker, metric) in self.iterate_unique_trackers():
             tracker.end_experiment(title)
 
     def start_tracking_server(self, port=5556):
@@ -141,7 +149,7 @@ class AbstractTrackingRunner:
         return return_v
     
     def generate_json(self):
-        json_trackers = [tracker for tracker, _ in self.iterate_trackers() if isinstance(tracker, JsonMetricTracker)]
+        json_trackers = [tracker for tracker, _ in self.iterate_unique_trackers() if isinstance(tracker, JsonMetricTracker)]
         data = dict()
         for tracker in json_trackers:
             data[tracker.get_json_key()] = tracker.get_json()
@@ -156,7 +164,7 @@ class ConstructionTrackingRunner(AbstractTrackingRunner):
         metric_name = data["metric_name"]
 
         if metric_name == "construction_start":
-            for (tracker,metric) in self.iterate_trackers():
+            for (tracker,metric) in self.iterate_unique_trackers():
                 tracker.initialize_construction(data['value'])
         else:
             if metric_name in self.metric_handlers:
@@ -176,12 +184,12 @@ class QueryTrackerRunner(AbstractTrackingRunner):
         if metric_name == "end_query":
             self.completed_queries += 1
             # if self.completed_queries / self.experiment_stats['queries']:
-            for (tracker, metric) in self.iterate_trackers():
+            for (tracker, metric) in self.iterate_unique_trackers():
                 tracker.end_query(data['value'])
         elif metric_name == "configure_experiment":
             self.completed_queries = 0
             self.experiment_stats = data['value']
-            for (tracker, metric) in self.iterate_trackers():
+            for (tracker, metric) in self.iterate_unique_trackers():
                 tracker.configure_experiment_stats(data['value'])
         else:
             if metric_name in self.metric_handlers:

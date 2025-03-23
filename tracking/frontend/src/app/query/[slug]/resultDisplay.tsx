@@ -2,15 +2,12 @@
 
 import useFetch from "@/util";
 import { ResultInfo } from "../page";
-import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import Graph from "graphology";
 import Sigma from "sigma";
-import FA2LayoutSupervisor from "graphology-layout-forceatlas2/worker";
 import {
     Table,
     TableBody,
-    TableCaption,
     TableCell,
     TableHead,
     TableHeader,
@@ -20,8 +17,6 @@ import {
 import ImageDisplay from "@/app/imageDisplay";
 import { Index } from "@/app/page";
 import { IndexStatDisplay } from "@/app/index/[slug]/indexInfo";
-import { Button } from "@/components/ui/button";
-import Link from "next/link";
 import {
     Accordion,
     AccordionContent,
@@ -42,7 +37,7 @@ export default function ResultDisplay({id} : {id: string}) {
                 <div className="grid grid-cols-2 gap-4">
                     <StatDisplay res={data}/>
                     <ImageDisplay url_base={`/api/query_image/${id}`} image_metrics={data.output_types['graph']}/>
-                    {data.data?.BestKParentMetric && <BestKParentDisplay data={data.data.BestKParentMetric}/>}
+                    {/* {data.data?.BestKParentMetric && <BestKParentDisplay data={data.data.BestKParentMetric}/>} */}
                 </div>
                 
             </div>}

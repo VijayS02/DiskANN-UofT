@@ -24,7 +24,7 @@ export default function IndexInfo({index_name} : {index_name: string}) {
         {loading && <div>Loading...</div>}
         {error && <div className="text-red-500 mt-2">{error}</div>}
         {data && <div>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 gap-4">
                 <div className="col-span-full">
                     <IndexStatDisplay res={data} showMetrics/>
                 </div>

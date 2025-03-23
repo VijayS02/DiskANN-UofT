@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 import sys
 import io
 import subprocess
-from construction_tracker import initialize_tracking_runner
+from construction_tracker import get_available_construction_metrics, initialize_construction_tracker
 from query_tracker import initialize_query_tracker 
 import time
 import hashlib
@@ -159,7 +159,7 @@ def generate_gt_file(base_file, query_file, query_k):
 
 
 @stream_func
-def construct_graph(index_name, base_file, r=32, l_build=50, alpha=1.2, saturate_graph=True):
+def construct_graph(index_name, base_file, r=32, l_build=50, alpha=1.2, saturate_graph=True, metrics=[]):
     print(f"BUILD DIR: {BUILD_DIR}")
     if not os.path.exists(base_file):
         print("Base File does not exist")
@@ -169,7 +169,7 @@ def construct_graph(index_name, base_file, r=32, l_build=50, alpha=1.2, saturate
     os.makedirs(index_path, exist_ok=True)
     index_prefix = os.path.join(index_path, INDEX_PREFIX)
     build_memory_index = os.path.join(BUILD_DIR, "apps", "build_memory_index")
-    tracker = initialize_tracking_runner()
+    tracker = initialize_construction_tracker(metrics)
     tracking_port = 5555
     command = [
             build_memory_index,
@@ -224,6 +224,7 @@ def construct_graph(index_name, base_file, r=32, l_build=50, alpha=1.2, saturate
             "l_build": l_build,
             "alpha": alpha,
             "saturate_graph": saturate_graph,
+            "metrics": metrics
         }))
 
     tracker.generate_graphs(os.path.join(index_path, 'output.png'))
@@ -372,6 +373,7 @@ def create_graph():
     l_build = data.get("l_build", 50)  # Default 50
     alpha = data.get("alpha", 1.2)  # Default 1.2
     saturate_graph = data.get("saturate_graph", True)  # Default True
+    metrics = data.get("metrics", [])
 
     if build_lock.acquire(blocking=False):
         if BUILD_DIR is None:
@@ -381,7 +383,7 @@ def create_graph():
     else:
         return jsonify({"error": "Build operation in progress"}), 423
      
-    construct_graph(index_name, base_file, r=r, l_build=l_build, alpha=alpha, saturate_graph=saturate_graph)
+    construct_graph(index_name, base_file, r=r, l_build=l_build, alpha=alpha, saturate_graph=saturate_graph, metrics=metrics)
 
     return jsonify({"message": "Graph construction started! UI will update automatically."}), 200
 
@@ -492,6 +494,10 @@ def get_index_image(id):
         return 404  # Return 404 if the image doesn't exist
     
     return send_file(image_path, mimetype="image/png")
+
+@app.route("/construction_metrics")
+def get_construction_metrics():
+    return jsonify(get_available_construction_metrics())
 
 
 if __name__ == "__main__":

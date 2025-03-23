@@ -36,6 +36,12 @@ export default function IndexInfo({index_name} : {index_name: string}) {
 }
 
 function StatDisplay({res} : {res: Index}) {
+  const { data, loading, error } = useFetch<Record<string, { label: string }>>("/construction_metrics");
+
+  const selectedMetrics = data ? res.metrics.map((key) => {
+    return data[key]?.label;
+  }) : res.metrics;
+
     return <div className="border border-gray-200 rounded"> <Table className="px-3">
     <TableHeader>
       <TableRow>
@@ -63,6 +69,16 @@ function StatDisplay({res} : {res: Index}) {
       <TableRow>
         <TableCell className="font-medium">Saturated Graph?</TableCell>
         <TableCell className="text-right">{res.saturate_graph ? "True" : "False"}</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Metrics Tracked</TableCell>
+        <TableCell className="text-right">
+          <div className="justify-end flex divide-x-1">
+            {selectedMetrics.map((metric, i) => (
+              <div key={i} className={i !== selectedMetrics.length -1 ? "px-3" : "pl-3"}>{metric}</div>
+            ))}
+          </div>
+        </TableCell>
       </TableRow>
     </TableBody>
   </Table>

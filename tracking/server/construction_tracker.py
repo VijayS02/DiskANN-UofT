@@ -145,9 +145,29 @@ class NodeDistanceTracker(AbstractConstructionTracker):
         self.node_distances.clear()
 
 
-def initialize_tracking_runner():
-    return ConstructionTrackingRunner(metric_handlers=[AddEdgeCountTracker(), ConstructionPathLengthFreqTracker(), ConstructionPathLengthOverTimeTracker(), NodeDistanceTracker()]
+
+
+METRICS = {
+    "add_edge_count": {"label": "Edge utilization tracker", "class": AddEdgeCountTracker},
+    "add_construction_path_length": {"label": "Construction path length tracker", "class": ConstructionPathLengthFreqTracker},
+    "add_construction_path_length_ot": {"label": "Construction path length over time tracker", "class": ConstructionPathLengthOverTimeTracker},
+    "node_info": {"label": "Node distance tracker", "class": NodeDistanceTracker},
+}
+
+def initialize_construction_tracker(selected_metrics):
+
+    metric_handlers = [METRICS[metric]['class']() for metric in selected_metrics if metric in METRICS]
+
+    return ConstructionTrackingRunner(metric_handlers=metric_handlers
     )
+
+
+
+def get_available_construction_metrics():
+    # Get metrics without the class
+    return {key: {"label": value["label"]} for key, value in METRICS.items()}
+
+
 
 
 if __name__ == "__main__":

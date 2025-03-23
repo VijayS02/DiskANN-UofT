@@ -1,6 +1,6 @@
 from matplotlib.axes import Axes
 
-from lib.abstract_trackers import AbstractQueryTracker
+from lib.abstract_trackers import AbstractQueryTracker, JsonMetricTracker
 from lib.basic_metric_types import FrequencyTracker, ChangeOverTimeTracker
 from lib.tracker import QueryTrackerRunner
 import subprocess
@@ -105,7 +105,7 @@ class MinDistanceConvergence(FrequencyTracker, AbstractQueryTracker):
 
 
 
-class BestKParentMetric(AbstractQueryTracker):
+class BestKParentMetric(JsonMetricTracker, AbstractQueryTracker):
     def __init__(self):
         super().__init__("node_connection", json="BestKParentMetric")
         self.parents = dict()

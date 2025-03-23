@@ -7,7 +7,7 @@ from matplotlib.axes import Axes
 import seaborn as sns
 
 
-from lib.abstract_trackers import AbstractConstructionTracker
+from lib.abstract_trackers import AbstractConstructionTracker, GraphMetricTracker
 from lib.basic_metric_types import FrequencyTracker, ChangeOverTimeTracker
 from lib.tracker import ConstructionTrackingRunner
 import subprocess
@@ -18,7 +18,7 @@ from lib.util import download_sift, create_build
 
 class AddEdgeCountTracker(FrequencyTracker, AbstractConstructionTracker):
     def __init__(self):
-        super().__init__("add_edge_count", bins=None, text=True)
+        super().__init__("add_edge_count", bins=None)
         self.const_data = dict()
         self.total_edges = 0
         self.edge_usage = dict()
@@ -85,9 +85,9 @@ class ConstructionPathLengthOverTimeTracker(ChangeOverTimeTracker, AbstractConst
         return "add_construction_path_length"
 
 
-class NodeDistanceTracker(AbstractConstructionTracker):
+class NodeDistanceTracker(GraphMetricTracker, AbstractConstructionTracker):
     def __init__(self):
-        super().__init__("node_info", graph=True, text=False)
+        super().__init__("node_info")
         self.node_distances = defaultdict(list)  # Stores distances per neighbor index
         self.data = dict()
         self.zeros = 0

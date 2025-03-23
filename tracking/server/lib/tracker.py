@@ -5,7 +5,7 @@ from typing import List, Dict
 import numpy as np
 import zmq
 import json
-from lib.abstract_trackers import AbstractConstructionTracker, AbstractMetricTracker, AbstractQueryTracker
+from lib.abstract_trackers import AbstractConstructionTracker, AbstractMetricTracker, AbstractQueryTracker, GraphMetricTracker, JsonMetricTracker, TextMetricTracker
 import threading
 
 import matplotlib.pyplot as plt
@@ -35,13 +35,13 @@ class AbstractTrackingRunner:
 
 
     def generate_text(self):
-        text_trackers = [tracker for tracker, _ in self.iterate_trackers() if tracker.has_text_output()]
+        text_trackers = [tracker for tracker, _ in self.iterate_trackers() if isinstance(tracker, TextMetricTracker)]
 
         for tracker in text_trackers:
             tracker.print_text_output()
 
     def generate_graphs(self, filename=None):
-        valid_trackers = [tracker for tracker, _ in self.iterate_trackers() if tracker.has_graph()]
+        valid_trackers = [tracker for tracker, _ in self.iterate_trackers() if isinstance(tracker, GraphMetricTracker)]
         if not valid_trackers:
             print("No graphs to generate.")
             return
@@ -141,7 +141,7 @@ class AbstractTrackingRunner:
         return return_v
     
     def generate_json(self):
-        json_trackers = [tracker for tracker, _ in self.iterate_trackers() if tracker.has_json()]
+        json_trackers = [tracker for tracker, _ in self.iterate_trackers() if isinstance(tracker, JsonMetricTracker)]
         data = dict()
         for tracker in json_trackers:
             data[tracker.get_json_key()] = tracker.get_json()

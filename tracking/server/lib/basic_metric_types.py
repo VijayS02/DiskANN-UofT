@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 
 import numpy as np
 
-from lib.abstract_trackers import AbstractMetricTracker
+from lib.abstract_trackers import GraphMetricTracker
 
 
 def set_graph_props(ax, graph_props):
@@ -21,7 +21,7 @@ def set_graph_props(ax, graph_props):
 
 
 
-class FrequencyTracker(AbstractMetricTracker, ABC):
+class FrequencyTracker(GraphMetricTracker, ABC):
     """
     Tracks the frequency distribution of a metric over multiple experiments.
 
@@ -35,8 +35,8 @@ class FrequencyTracker(AbstractMetricTracker, ABC):
             where keys are experiment titles and values are lists of data points.
         bins (int): Number of bins to use when plotting histograms.
     """
-    def __init__(self, metric: str, bins='auto', text=False):
-        super().__init__(metric, graph=True, text=text)
+    def __init__(self, metric: str, bins='auto'):
+        super().__init__(metric)
         self.counts = []
         self.experiments = dict()
         self.bins = bins
@@ -82,7 +82,7 @@ class FrequencyTracker(AbstractMetricTracker, ABC):
         ax.legend()
 
 
-class ChangeOverTimeTracker(AbstractMetricTracker, ABC):
+class ChangeOverTimeTracker(GraphMetricTracker, ABC):
     """
     Tracks how a metric changes over time across multiple experiments.
 
@@ -100,8 +100,8 @@ class ChangeOverTimeTracker(AbstractMetricTracker, ABC):
         counts (List[int]): A list tracking the number of data points contributing to each time step
             (used only when `average=True`).
     """
-    def __init__(self, metric: str, average=False, text=False):
-        super().__init__(metric, graph=True, text=text)
+    def __init__(self, metric: str, average=False):
+        super().__init__(metric)
         self.time_series = []
         self.experiments = dict()
         self.average = average

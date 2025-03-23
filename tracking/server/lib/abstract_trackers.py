@@ -4,11 +4,8 @@ from matplotlib.axes import Axes
 
 
 class AbstractMetricTracker:
-    def __init__(self, metric: str, text: bool=False, graph: bool=False, json: str=None):
+    def __init__(self, metric: str):
         self.metric = metric
-        self.text = text
-        self.graph = graph
-        self.json_key = json
 
     def get_metric_name(self) -> str:
         return self.metric
@@ -23,34 +20,6 @@ class AbstractMetricTracker:
         """
         pass
 
-    def has_graph(self) -> bool:
-        """
-        Return whether this metric tracker generates a graph using generate_subplot or not.
-        :return: Boolean - does this metric have a graph?
-        """
-        return self.graph
-
-    @abstractmethod
-    def generate_subplot(self,ax: Axes):
-        """
-        Given an axis, plot the relevant data across multiple experiments related to this metric.
-        :param ax: Matplotlib Axes to plot data onto.
-        """
-        pass
-
-    def has_text_output(self):
-        """
-        Return whether this metric tracker generates a text using print_text_output or not.
-        :return: Boolean - does this metric have text to print?
-        """
-        return self.text
-
-    @abstractmethod
-    def print_text_output(self):
-        """
-        Unused. 
-        """
-        pass
 
     @abstractmethod
     def end_experiment(self, title):
@@ -60,20 +29,43 @@ class AbstractMetricTracker:
         """
         pass
 
-    def has_json(self):
-        return self.json_key is not None
-    
-    def get_json_key(self):
-        return self.json_key
-    
+
+
+class JsonMetricTracker(AbstractMetricTracker):
+
+    def __init__(self, metric: str, json: str):
+        super().__init__(metric)
+        self.json_key = json
+
     @abstractmethod
     def get_json(self):
         pass
 
+    def get_json_key(self):
+        return self.json_key
+
+class GraphMetricTracker(AbstractMetricTracker):
+    def __init__(self, metric: str):
+        super().__init__(metric)
+
+    @abstractmethod
+    def generate_subplot(self, ax: Axes):
+        pass
+
+
+class TextMetricTracker(AbstractMetricTracker):
+    def __init__(self, metric: str):
+        super().__init__(metric)
+
+    @abstractmethod
+    def print_text_output(self):
+        pass
+
+
 class AbstractQueryTracker(AbstractMetricTracker):
 
-    def __init__(self, metric="NONE", graph=False, text=False, json=None):
-        super().__init__(metric=metric, graph=graph, text=text, json=json)
+    def __init__(self, metric):
+        super().__init__(metric)
         self.experiment_info = dict()
 
     def configure_experiment_stats(self, data):

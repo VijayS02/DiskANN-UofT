@@ -17,6 +17,7 @@ import {
     TableRow,
   } from "@/components/ui/table"
   import dagre from "dagre";
+import ImageDisplay from "@/app/imageDisplay";
 
 
 export default function ResultDisplay({id} : {id: string}) {
@@ -32,7 +33,7 @@ export default function ResultDisplay({id} : {id: string}) {
                     <div className="col-span-full">
                         <StatDisplay res={data}/>
                     </div>
-                    <Image src={`/api/query_image/${id}`} className="w-full" alt="Query Image" width={500} height={500} />
+                    <ImageDisplay url_base={`/api/query_image/${id}`} image_metrics={data.output_types['graph']}/>
                     {data.data?.BestKParentMetric && <BestKParentDisplay data={data.data.BestKParentMetric}/>}
                 </div>
                 

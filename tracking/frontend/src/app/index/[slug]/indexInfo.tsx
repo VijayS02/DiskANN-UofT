@@ -12,6 +12,7 @@ import {
     TableRow,
   } from "@/components/ui/table"
 import Image from "next/image";
+import ImageDisplay from "@/app/imageDisplay";
 
 
 export default function IndexInfo({index_name} : {index_name: string}) {
@@ -27,7 +28,7 @@ export default function IndexInfo({index_name} : {index_name: string}) {
                 <div className="col-span-full">
                     <StatDisplay res={data}/>
                 </div>
-                <Image src={`/api/index_image/${index_name}`} className="w-full" alt="Query Image" width={500} height={500} />
+                <ImageDisplay url_base={`/api/index_image/${index_name}`} image_metrics={data.output_types['graph']}/>
             </div>
             
         </div>}

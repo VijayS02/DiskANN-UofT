@@ -1,3 +1,4 @@
+import os
 import time
 from abc import abstractmethod
 from typing import List, Dict
@@ -48,7 +49,7 @@ class AbstractTrackingRunner:
         for tracker in text_trackers:
             tracker.print_text_output()
 
-    def generate_graphs(self, filename=None):
+    def generate_graphs(self, filename_prefix=None):
         valid_trackers = [tracker for tracker, _ in self.iterate_unique_trackers() if isinstance(tracker, GraphMetricTracker)]
         if not valid_trackers:
             print("No graphs to generate.")
@@ -56,29 +57,30 @@ class AbstractTrackingRunner:
 
         num_trackers = len(valid_trackers)
 
-
-
-        # Compute the closest square layout (rows x cols)
-        ncols = int(np.ceil(np.sqrt(num_trackers)))  # Columns should be sqrt of count
-        nrows = int(np.ceil(num_trackers / ncols))  # Compute rows to fit all plots
-
-        fig, axes = plt.subplots(nrows, ncols, figsize=(4 * ncols, 4 * nrows))
-
-        # Flatten axes array for easier iteration (handles cases where ncols > 1)
-        axes = np.array(axes).reshape(-1)  # Reshape in case of single row or column
-
-        for ax, tracker in zip(axes, valid_trackers):
-            tracker.generate_subplot(ax)
-
-        # Hide unused subplots if any
-        for ax in axes[num_trackers:]:
-            ax.axis("off")
-
-        plt.tight_layout()
-        if filename:
-            plt.savefig(filename, dpi=300, bbox_inches="tight")  # Save image
-            print(f"Graph saved to {filename}")
+        if filename_prefix:
+            for tracker in valid_trackers:
+                fig, ax = plt.subplots(figsize=(8, 8), dpi=600)
+                tracker.generate_subplot(ax)
+                filename = os.path.join(filename_prefix, f"{tracker.id}.png")
+                plt.savefig(filename, dpi=300, bbox_inches="tight")  # Save each graph as its own file
+                print(f"Graph saved to {filename}")
+                plt.close(fig)
         else:
+            # Compute the closest square layout (rows x cols)
+            ncols = int(np.ceil(np.sqrt(num_trackers)))  # Columns should be sqrt of count
+            nrows = int(np.ceil(num_trackers / ncols))  # Compute rows to fit all plots
+
+            fig, axes = plt.subplots(nrows, ncols, figsize=(4 * ncols, 4 * nrows))
+            axes = np.array(axes).reshape(-1)  # Reshape in case of single row or column
+
+            for ax, tracker in zip(axes, valid_trackers):
+                tracker.generate_subplot(ax)
+
+            # Hide unused subplots if any
+            for ax in axes[num_trackers:]:
+                ax.axis("off")
+
+            plt.tight_layout()
             plt.show()  # Display graph
 
     def end_experiment(self, title):
@@ -154,7 +156,16 @@ class AbstractTrackingRunner:
         for tracker in json_trackers:
             data[tracker.get_json_key()] = tracker.get_json()
         return data
-
+    
+    def generate_output_dict(self):
+        json_trackers = [tracker.get_id() for tracker, _ in self.iterate_unique_trackers() if isinstance(tracker, JsonMetricTracker)]
+        text_trackers = [tracker.get_id() for tracker, _ in self.iterate_unique_trackers() if isinstance(tracker, TextMetricTracker)]
+        graph_trackers = [tracker.get_id() for tracker, _ in self.iterate_unique_trackers() if isinstance(tracker, GraphMetricTracker)]
+        return {
+            "json": json_trackers,
+            "text": text_trackers,
+            "graph": graph_trackers
+        }
 
 class ConstructionTrackingRunner(AbstractTrackingRunner):
     def __init__(self, port=5556, metric_handlers: List[AbstractConstructionTracker]=None):

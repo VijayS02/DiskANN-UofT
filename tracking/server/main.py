@@ -224,10 +224,11 @@ def construct_graph(index_name, base_file, r=32, l_build=50, alpha=1.2, saturate
             "l_build": l_build,
             "alpha": alpha,
             "saturate_graph": saturate_graph,
-            "metrics": metrics
+            "metrics": metrics,
+            "output_types": tracker.generate_output_dict()
         }))
 
-    tracker.generate_graphs(os.path.join(index_path, 'output.png'))
+    tracker.generate_graphs(index_path)
 
     return "Graph construction complete!"
 
@@ -306,7 +307,7 @@ def trace_query(index_path, query_file, l=50, k=10, metrics=[]):
 
     ret = tracker.trace_program('query_run', exec_func, tracking_port=tracking_port)
     print(ret)
-    tracker.generate_graphs(os.path.join(result_path, 'output.png'))
+    tracker.generate_graphs(result_path)
 
     json_data = tracker.generate_json()
     # Create json file with data about query:
@@ -319,7 +320,9 @@ def trace_query(index_path, query_file, l=50, k=10, metrics=[]):
             "k": k,
             "directory": result_path,
             "data": json_data,
-            "metrics": metrics
+            "metrics": metrics,
+            "time": int(datetime.now().timestamp()),
+            "output_types": tracker.generate_output_dict()
         }))
         
     return "Query complete!"
@@ -391,6 +394,9 @@ def create_graph():
 
 @app.route("/list_indexes")
 def list_indexes():
+    if not os.path.exists(INDEX_DIR):
+        return jsonify({"indexes": []
+        })
     indexes = os.listdir(INDEX_DIR)
     # Load json files with data about indexes
     indexes = [os.path.join(INDEX_DIR, index) for index in indexes]
@@ -454,6 +460,8 @@ def download_file():
 
 @app.route("/results_list")
 def get_results():
+    if not os.path.exists(RESULT_PATH):
+        return jsonify({"results": []})
     results = os.listdir(RESULT_PATH)
     results = [os.path.join(RESULT_PATH, result) for result in results]
     results = [result for result in results if os.path.exists(os.path.join(result, "query_info.json"))]
@@ -461,9 +469,9 @@ def get_results():
     return jsonify({"results": results})
 
 
-@app.route("/query_image/<path:id>")
-def get_image(id):
-    image_path = os.path.join(RESULT_PATH, id, "output.png")
+@app.route("/query_image/<path:id>/<path:metric>")
+def get_image(id, metric):
+    image_path = os.path.join(RESULT_PATH, id, f"{metric}.png")
     
     if not os.path.exists(image_path):
         return 404  # Return 404 if the image doesn't exist
@@ -489,9 +497,9 @@ def get_index_json(id):
     return jsonify(json.load(open(json_path)))
 
 
-@app.route("/index_image/<path:id>")
-def get_index_image(id):
-    image_path = os.path.join(INDEX_DIR, id, "output.png")
+@app.route("/index_image/<path:id>/<path:metric>")
+def get_index_image(id, metric):
+    image_path = os.path.join(INDEX_DIR, id, f"{metric}.png")
     
     if not os.path.exists(image_path):
         return 404  # Return 404 if the image doesn't exist

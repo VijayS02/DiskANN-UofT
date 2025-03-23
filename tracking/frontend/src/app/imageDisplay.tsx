@@ -1,0 +1,40 @@
+import {
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
+  } from "@/components/ui/card"
+import {
+    Carousel,
+    CarouselContent,
+    CarouselItem,
+    CarouselNext,
+    CarouselPrevious,
+  } from "@/components/ui/carousel"
+import Image from "next/image"
+
+export default function ImageDisplay({url_base, image_metrics} : {url_base: string, image_metrics: string[]}) {
+    console.log(`${url_base}/${image_metrics[0]}`)
+    return <Card>
+    <CardHeader>
+        <CardTitle>Graphs</CardTitle>
+        <CardDescription>Graphs extracted from tracing</CardDescription>
+      </CardHeader>
+      <CardContent className="relative">
+        <Carousel className="w-full">
+            <CarouselContent>
+            {image_metrics.map((metric_id) => (
+                <CarouselItem key={metric_id}>
+                <div className="p-1">
+                    <Image src={`${url_base}/${metric_id}`} className="w-full" width={500} height={500} alt="Image" />
+                </div>
+                </CarouselItem>
+            ))}
+            </CarouselContent>
+            <CarouselPrevious  className="-left-4 disabled:opacity-25 bg-black text-white opacity-50 hover:bg-black hover:text-white hover:opacity-100"/>
+            <CarouselNext  className="-right-4 disabled:opacity-25 bg-black text-white opacity-50 hover:bg-black hover:text-white hover:opacity-100"/>
+        </Carousel>
+    </CardContent>
+  </Card>
+}

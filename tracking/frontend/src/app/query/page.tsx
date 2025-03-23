@@ -167,6 +167,9 @@ export interface ResultInfo {
     id: string;
     data: any;
     metrics: string[];
+    output_types: {
+        [key: string]: string[];
+    }
 }
 
 function Results(){

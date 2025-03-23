@@ -164,6 +164,9 @@ export interface Index {
   saturate_graph: boolean;
   id: string;
   metrics: string[];
+  output_types: {
+    [key: string]: string[];
+  }
 }
 
 function AvailableIndexes(){

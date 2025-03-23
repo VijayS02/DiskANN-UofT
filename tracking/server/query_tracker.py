@@ -137,10 +137,24 @@ class BestKParentMetric(AbstractQueryTracker):
         return self.results
 
 
-def initialize_query_tracker():
-    tracker = QueryTrackerRunner(metric_handlers=[NodeVisitedDistribution(), QueryTimeDistribution(), AverageDistancePerStep(),
-                                                 MinDistanceConvergence(), BestKParentMetric()])
+METRICS = {
+    "NodeVisitedDistribution": {"label": "Nodes Visited Distribution", "class": NodeVisitedDistribution},
+    "QueryTimeDistribution": {"label": "Query Time Distribution", "class": QueryTimeDistribution},
+    "AverageDistancePerStep": {"label": "Average Distance Per Step", "class": AverageDistancePerStep},
+    "MinDistanceConvergence": {"label": "Min Distance Convergence", "class": MinDistanceConvergence},
+    "BestKParentMetric": {"label": "Best K Parent Metric", "class": BestKParentMetric},
+}
+
+def initialize_query_tracker(selected_metrics):
+    metric_handlers = [METRICS[metric]['class']() for metric in selected_metrics if metric in METRICS]
+
+    tracker = QueryTrackerRunner(metric_handlers=metric_handlers)
     return tracker
+
+
+def get_available_query_metrics():
+    # Get metrics without the class
+    return {key: {"label": value["label"]} for key, value in METRICS.items()}
 
 
 if __name__ == "__main__":

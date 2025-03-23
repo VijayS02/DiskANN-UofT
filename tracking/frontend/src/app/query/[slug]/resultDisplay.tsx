@@ -31,7 +31,7 @@ export default function ResultDisplay({id} : {id: string}) {
                         <StatDisplay res={data}/>
                     </div>
                     <Image src={`/api/query_image/${id}`} className="w-full" alt="Query Image" width={500} height={500} />
-                    {data.data.BestKParentMetric && <BestKParentDisplay data={data.data.BestKParentMetric}/>}
+                    {data.data?.BestKParentMetric && <BestKParentDisplay data={data.data.BestKParentMetric}/>}
                 </div>
                 
             </div>}
@@ -41,6 +41,13 @@ export default function ResultDisplay({id} : {id: string}) {
 
 
 function StatDisplay({res} : {res: ResultInfo}) {
+    const { data, loading, error } = useFetch<Record<string, { label: string }>>("/query_metrics");
+
+    const selectedMetrics = data ? res.metrics.map((key) => {
+      return data[key]?.label;
+    }) : res.metrics;
+
+    
     return <div className="border border-gray-200 rounded"><Table className="px-3">
     <TableHeader>
       <TableRow>
@@ -64,6 +71,16 @@ function StatDisplay({res} : {res: ResultInfo}) {
       <TableRow>
         <TableCell className="font-medium">L Memory Scratch Size</TableCell>
         <TableCell className="text-right">{res.l}</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Metrics Tracked</TableCell>
+        <TableCell className="text-right">
+          <div className="justify-end flex divide-x-1">
+            {selectedMetrics.length > 0 ? selectedMetrics.map((metric, i) => (
+              <div key={i} className={i !== selectedMetrics.length -1 ? "px-3" : "pl-3"}>{metric}</div>
+            )) : "None"}
+          </div>
+        </TableCell>
       </TableRow>
     </TableBody>
   </Table></div>

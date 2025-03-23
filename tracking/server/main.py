@@ -9,7 +9,7 @@ import sys
 import io
 import subprocess
 from construction_tracker import get_available_construction_metrics, initialize_construction_tracker
-from query_tracker import initialize_query_tracker 
+from query_tracker import get_available_query_metrics, initialize_query_tracker 
 import time
 import hashlib
 from datetime import datetime
@@ -232,7 +232,7 @@ def construct_graph(index_name, base_file, r=32, l_build=50, alpha=1.2, saturate
     return "Graph construction complete!"
 
 @stream_func
-def trace_query(index_path, query_file, l=50, k=10):
+def trace_query(index_path, query_file, l=50, k=10, metrics=[]):
     if not os.path.exists(index_path):
         return "Index does not exist", 400
     
@@ -256,7 +256,7 @@ def trace_query(index_path, query_file, l=50, k=10):
     # Send results to /dev/null to avoid cluttering the output
 
 
-    tracker = initialize_query_tracker()
+    tracker = initialize_query_tracker(metrics)
     tracking_port = 5555
     command = [
         search_memory_index,
@@ -269,7 +269,8 @@ def trace_query(index_path, query_file, l=50, k=10):
         "-L", str(l),
         "--result_path", RESULT_PATH,
         "--num_threads", "1",
-        "--tracking_addr", f"tcp://localhost:{tracking_port}"
+        "--tracking_addr", f"tcp://localhost:{tracking_port}", 
+        "--collect_queries_data", "100"
     ]
     
     def exec_func():
@@ -317,7 +318,8 @@ def trace_query(index_path, query_file, l=50, k=10):
             "l": l,
             "k": k,
             "directory": result_path,
-            "data": json_data
+            "data": json_data,
+            "metrics": metrics
         }))
         
     return "Query complete!"
@@ -430,6 +432,7 @@ def query_graph():
     query_file = data["query_file"]
     l = data.get("l", 50)
     k = data.get("k", 10)
+    metrics = data.get("metrics", [])
 
     index_path = os.path.join(INDEX_DIR, index_name)
 
@@ -438,7 +441,7 @@ def query_graph():
             build_lock.release()
             return "Build not started. Please start the build first.", 400
         build_lock.release()
-        trace_query(index_path, query_file, l=l, k=k)
+        trace_query(index_path, query_file, l=l, k=k, metrics=metrics)
         return jsonify({"message": "Query started! UI will update automatically."}), 200
         
     else:
@@ -498,6 +501,12 @@ def get_index_image(id):
 @app.route("/construction_metrics")
 def get_construction_metrics():
     return jsonify(get_available_construction_metrics())
+
+
+
+@app.route("/query_metrics")
+def get_query_metrics():
+    return jsonify(get_available_query_metrics())
 
 
 if __name__ == "__main__":

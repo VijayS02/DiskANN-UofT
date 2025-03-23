@@ -11,10 +11,11 @@ import {
   } from "@/components/ui/select"
 import { Button } from "@/components/ui/button";
 import useFetch from "@/util";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Index } from "../page";
 import Image from "next/image";
 import Link from "next/link";
+import MultiSelect from "@/components/ui/multiselect";
 
 export default function Queries() {
   return (
@@ -32,8 +33,9 @@ export default function Queries() {
 const QueryForm: React.FC = () => {
   const [indexName, setIndexName] = useState("");
   const [queryFile, setQueryFile] = useState("");
-  const [lQuery, setLquery] = useState<number | "">("");
-  const [k, setK] = useState<number | "">("");
+  const [lQuery, setLquery] = useState<number | "">(50);
+  const [k, setK] = useState<number | "">(10);
+  const [selectedMetrics, setSelectedMetrics] = useState<string[]>([]);
 
   const { data, loading, error, fetchData } = useFetch<any>("/query_index", "POST");
 
@@ -48,6 +50,7 @@ const QueryForm: React.FC = () => {
           query_file: queryFile,
           l: lQuery || 50,
           k: k || 10,
+          metrics: selectedMetrics,
       });
   };
 
@@ -84,7 +87,8 @@ const QueryForm: React.FC = () => {
                       onChange={(e) => setK(e.target.value ? parseFloat(e.target.value) : "")}
                   />
               </div>
-              <div className="flex p-2 space-between flex-col gap-2 max-w-1/2">
+              <SelectMetrics selectedMetrics={selectedMetrics} setSelectedMetrics={setSelectedMetrics}/>
+              <div className="flex p-2 space-between flex-col gap-2 justify-end max-w-1/2">
                   <Button size="sm" onClick={handleSubmit} disabled={loading}>
                       {loading ? "Submitting..." : "Query!"}
                   </Button>
@@ -124,6 +128,36 @@ function IndexSelector({ selectedIndex, setSelectedIndex }: IndexSelectorProps) 
     
 }
 
+function SelectMetrics({selectedMetrics, setSelectedMetrics} : any) {
+  const { data, loading, error } = useFetch<Record<string, { label: string }>>("/query_metrics");
+
+  const options = data ? Object.keys(data).map((key) => ({
+    label: data[key]?.label,
+    value: key,
+  })) : [];
+
+  useEffect(() => {
+    // If data is loaded set default to all metrics
+    if (data) {
+      setSelectedMetrics(Object.keys(data));
+    }
+  }, [data]);
+
+  console.log(data);
+
+
+  return <div>
+            <div className="text-muted-foreground mb-1 mx-1">Selected Metrics</div>
+            <MultiSelect options={options} 
+              disabled={loading}
+              placeholder="Select metrics to track..." 
+              selectedValues={selectedMetrics}
+              setSelectedValues={setSelectedMetrics}
+            />
+          </div>
+
+}
+
 export interface ResultInfo {
     index_name: string;
     query_file: string;
@@ -132,6 +166,7 @@ export interface ResultInfo {
     directory: string;
     id: string;
     data: any;
+    metrics: string[];
 }
 
 function Results(){

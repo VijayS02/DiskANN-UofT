@@ -18,6 +18,16 @@ import {
   } from "@/components/ui/table"
   import dagre from "dagre";
 import ImageDisplay from "@/app/imageDisplay";
+import { Index } from "@/app/page";
+import { IndexStatDisplay } from "@/app/index/[slug]/indexInfo";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
+import {
+    Accordion,
+    AccordionContent,
+    AccordionItem,
+    AccordionTrigger,
+  } from "@/components/ui/accordion"
 
 
 export default function ResultDisplay({id} : {id: string}) {
@@ -29,10 +39,8 @@ export default function ResultDisplay({id} : {id: string}) {
             {loading && <div>Loading...</div>}
             {error && <div className="text-red-500 mt-2">{error}</div>}
             {data && <div>
-                <div className="grid grid-cols-2 gap-2">
-                    <div className="col-span-full">
-                        <StatDisplay res={data}/>
-                    </div>
+                <div className="grid grid-cols-2 gap-4">
+                    <StatDisplay res={data}/>
                     <ImageDisplay url_base={`/api/query_image/${id}`} image_metrics={data.output_types['graph']}/>
                     {data.data?.BestKParentMetric && <BestKParentDisplay data={data.data.BestKParentMetric}/>}
                 </div>
@@ -45,13 +53,15 @@ export default function ResultDisplay({id} : {id: string}) {
 
 function StatDisplay({res} : {res: ResultInfo}) {
     const { data, loading, error } = useFetch<Record<string, { label: string }>>("/query_metrics");
+    const { data: indexData } = useFetch< Index>(`/index_json/${res.index_name}`);
 
     const selectedMetrics = data ? res.metrics.map((key) => {
       return data[key]?.label;
     }) : res.metrics;
 
     
-    return <div className="border border-gray-200 rounded"><Table className="px-3">
+    return <>
+        <div className="border border-gray-200 rounded col-span-full"><Table className="px-3">
     <TableHeader>
       <TableRow>
         <TableHead className="w-[100px]">Parameter</TableHead>
@@ -86,7 +96,21 @@ function StatDisplay({res} : {res: ResultInfo}) {
         </TableCell>
       </TableRow>
     </TableBody>
-  </Table></div>
+  </Table>
+  </div>{indexData && <div className="col-span-full">
+    <Accordion type="single" collapsible className="w-full">
+      <AccordionItem value="item-1">
+        <AccordionTrigger>
+            <div className="text-2xl">
+            Index Information : {res.index_name}
+            </div>
+        </AccordionTrigger>
+        <AccordionContent>
+            <IndexStatDisplay res={indexData}/>
+        </AccordionContent>
+      </AccordionItem>
+    </Accordion>    
+    </div>}</>
  
 }
 

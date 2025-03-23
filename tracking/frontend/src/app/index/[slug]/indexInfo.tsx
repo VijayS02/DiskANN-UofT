@@ -26,7 +26,7 @@ export default function IndexInfo({index_name} : {index_name: string}) {
         {data && <div>
             <div className="grid grid-cols-2 gap-2">
                 <div className="col-span-full">
-                    <StatDisplay res={data}/>
+                    <IndexStatDisplay res={data} showMetrics/>
                 </div>
                 <ImageDisplay url_base={`/api/index_image/${index_name}`} image_metrics={data.output_types['graph']}/>
             </div>
@@ -36,7 +36,7 @@ export default function IndexInfo({index_name} : {index_name: string}) {
 )
 }
 
-function StatDisplay({res} : {res: Index}) {
+function IndexStatDisplay({res, showMetrics} : {res: Index, showMetrics?: boolean}) {
   const { data, loading, error } = useFetch<Record<string, { label: string }>>("/construction_metrics");
 
   const selectedMetrics = data ? res.metrics.map((key) => {
@@ -52,7 +52,7 @@ function StatDisplay({res} : {res: Index}) {
     </TableHeader>
     <TableBody>
       <TableRow>
-        <TableCell className="font-medium">Index Name</TableCell>
+        <TableCell className="font-medium">Base File Path</TableCell>
         <TableCell className="text-right">{res.base_file}</TableCell>
       </TableRow>
       <TableRow>
@@ -71,7 +71,7 @@ function StatDisplay({res} : {res: Index}) {
         <TableCell className="font-medium">Saturated Graph?</TableCell>
         <TableCell className="text-right">{res.saturate_graph ? "True" : "False"}</TableCell>
       </TableRow>
-      <TableRow>
+      {showMetrics && <TableRow>
         <TableCell className="font-medium">Metrics Tracked</TableCell>
         <TableCell className="text-right">
           <div className="justify-end flex divide-x-1">
@@ -80,9 +80,11 @@ function StatDisplay({res} : {res: Index}) {
             ))}
           </div>
         </TableCell>
-      </TableRow>
+      </TableRow>}
     </TableBody>
   </Table>
   </div>
  
 }
+
+export {IndexStatDisplay}

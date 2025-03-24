@@ -36,8 +36,12 @@ const useFetch = <T,>(
 
                 if (method === "POST") {
                     const bodyData = newPostData || postData;
-                    requestOptions.headers = { "Content-Type": "application/json" };
-                    requestOptions.body = JSON.stringify(bodyData);
+                    if (bodyData instanceof FormData) {
+                        requestOptions.body = bodyData; // Browser sets headers automatically
+                    } else{
+                        requestOptions.headers = { "Content-Type": "application/json" };
+                        requestOptions.body = JSON.stringify(bodyData);
+                    }
                     setPostData(bodyData); // Store latest post data
                 }
 

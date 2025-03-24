@@ -16,6 +16,7 @@ import { Index } from "../page";
 import Image from "next/image";
 import Link from "next/link";
 import MultiSelect from "@/components/ui/multiselect";
+import { FileChooser } from "../uploads/page";
 
 export default function Queries() {
   return (
@@ -59,14 +60,7 @@ const QueryForm: React.FC = () => {
           <div className="text-xl mb-2 mx-1">Create Query</div>
           <div className="grid grid-cols-2 gap-4">
               <IndexSelector selectedIndex={indexName} setSelectedIndex={setIndexName} />
-              <div>
-                  <div className="text-muted-foreground mb-1 mx-1">Query File</div>
-                  <Input 
-                      placeholder="Enter query file path"
-                      value={queryFile}
-                      onChange={(e) => setQueryFile(e.target.value)}
-                  />
-              </div>
+              <FileChooser label="Query File" selectedFile={queryFile} setSelectedFile={setQueryFile} placeholder="Select a query file..." />
               <div>
                   <div className="text-muted-foreground mb-1 mx-1">L (Search Depth)</div>
                   <Input 

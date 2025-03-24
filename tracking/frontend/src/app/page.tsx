@@ -6,6 +6,7 @@ import useFetch from "@/util";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import MultiSelect from "@/components/ui/multiselect";
+import { FileChooser } from "./uploads/page";
 
 export default function Home() {
   return (
@@ -59,14 +60,7 @@ const ConstructForm: React.FC = () => {
                       onChange={(e) => setIndexName(e.target.value)}
                   />
               </div>
-              <div>
-                  <div className="text-muted-foreground mb-1 mx-1">Base File</div>
-                  <Input 
-                      placeholder="Enter base file path"
-                      value={baseFile}
-                      onChange={(e) => setBaseFile(e.target.value)}
-                  />
-              </div>
+              <FileChooser label="Base File" selectedFile={baseFile} setSelectedFile={setBaseFile} placeholder="Select a base file..." />
               <div>
                   <div className="text-muted-foreground mb-1 mx-1">Index Range (#Edges/Node)</div>
                   <Input 

@@ -161,18 +161,23 @@ def generate_gt_file(base_file, query_file, query_k):
 
 
 @stream_func
-def construct_graph(index_name, base_file, r=32, l_build=50, alpha=1.2, saturate_graph=True, metrics=[]):
+def construct_graph(index_name, base_file_name, r=32, l_build=50, alpha=1.2, saturate_graph=True, metrics=[]):
     print(f"BUILD DIR: {BUILD_DIR}")
+    
+    os.makedirs(INDEX_DIR, exist_ok=True)
+    index_path = os.path.join(INDEX_DIR, index_name)
+    base_file = os.path.join(UPLOADS_DIR, base_file_name)
+
     if not os.path.exists(base_file):
         print("Base File does not exist")
         return "Base File does not exist", 400
-    os.makedirs(INDEX_DIR, exist_ok=True)
-    index_path = os.path.join(INDEX_DIR, index_name)
+
     os.makedirs(index_path, exist_ok=True)
     index_prefix = os.path.join(index_path, INDEX_PREFIX)
     build_memory_index = os.path.join(BUILD_DIR, "apps", "build_memory_index")
     tracker = initialize_construction_tracker(metrics)
     tracking_port = 5555
+
     command = [
             build_memory_index,
             "--data_type", "float",
@@ -221,7 +226,7 @@ def construct_graph(index_name, base_file, r=32, l_build=50, alpha=1.2, saturate
     with open(os.path.join(index_path, "index_info.json"), "w") as f:
         f.write(json.dumps({
             "index_name": index_name,
-            "base_file": base_file,
+            "base_file": base_file_name,
             "r": r,
             "l_build": l_build,
             "alpha": alpha,
@@ -235,9 +240,11 @@ def construct_graph(index_name, base_file, r=32, l_build=50, alpha=1.2, saturate
     return "Graph construction complete!"
 
 @stream_func
-def trace_query(index_path, query_file, l=50, k=10, metrics=[]):
+def trace_query(index_path, query_file_name, l=50, k=10, metrics=[]):
     if not os.path.exists(index_path):
         return "Index does not exist", 400
+    
+    query_file = os.path.join(UPLOADS_DIR, query_file_name)
     
     if not os.path.exists(query_file):
         return "Query file does not exist", 400
@@ -317,7 +324,7 @@ def trace_query(index_path, query_file, l=50, k=10, metrics=[]):
         f.write(json.dumps({
             "id": current_time,
             "index_name": index_info["index_name"],
-            "query_file": query_file,
+            "query_file": query_file_name,
             "l": l,
             "k": k,
             "directory": result_path,
@@ -351,11 +358,18 @@ def run_build():
 
 @app.route('/upload', methods=['POST'])
 def upload_file():
+    if 'file' not in request.files:  # 🔹 Check if the file key exists
+        return jsonify({"error": "No file part"}), 400
+
     file = request.files['file']
-    os.makedirs(UPLOADS_DIR,
-                exist_ok=True)
+
+    if file.filename == '':  # 🔹 Check if a file was actually selected
+        return jsonify({"error": "No selected file"}), 400
+
+    os.makedirs(UPLOADS_DIR, exist_ok=True)
     file_path = os.path.join(UPLOADS_DIR, file.filename)
     file.save(file_path)
+    
     return jsonify({"message": "File uploaded successfully", "path": file_path})
 
 @app.route('/uploads')

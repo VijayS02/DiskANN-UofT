@@ -31,6 +31,7 @@ function Navbar() {
             </div>
           </div>
           <div className="flex space-x-4 my-auto">
+          <Button variant={'ghost'} size={'lg'} asChild><Link href="/uploads">Uploads</Link></Button>
             <Button variant={'ghost'} size={'lg'} asChild><Link href="/">Construct</Link></Button>
             <Button variant={'ghost'} size={'lg'} asChild><Link href="/query">Query</Link></Button>
             <CreateBuild/>

@@ -41,8 +41,6 @@ class AbstractMetricTracker:
         """
         pass
 
-
-
 class JsonMetricTracker(AbstractMetricTracker):
 
     def __init__(self, json: str, *args, **kwargs):
@@ -91,6 +89,9 @@ class AbstractQueryTracker(AbstractMetricTracker):
         """
         pass
 
+class IndividualQueryTracker(AbstractQueryTracker):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 class AbstractConstructionTracker(AbstractMetricTracker):
     @abstractmethod

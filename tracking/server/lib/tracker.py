@@ -6,7 +6,7 @@ from typing import List, Dict
 import numpy as np
 import zmq
 import json
-from lib.abstract_trackers import AbstractConstructionTracker, AbstractMetricTracker, AbstractQueryTracker, GraphMetricTracker, JsonMetricTracker, TextMetricTracker
+from lib.abstract_trackers import AbstractConstructionTracker, AbstractMetricTracker, AbstractQueryTracker, GraphMetricTracker, IndividualQueryTracker, JsonMetricTracker, TextMetricTracker
 import threading
 
 import matplotlib.pyplot as plt
@@ -40,7 +40,7 @@ class AbstractTrackingRunner:
         for tracker, metric in self.iterate_trackers():
             if tracker.get_id() not in trackers:
                 trackers.add(tracker.get_id())
-                yield tracker, metric
+                yield tracker, tracker.get_subscribed_metrics()
 
 
     def generate_text(self):
@@ -49,8 +49,8 @@ class AbstractTrackingRunner:
         for tracker in text_trackers:
             tracker.print_text_output()
 
-    def generate_graphs(self, filename_prefix=None):
-        valid_trackers = [tracker for tracker, _ in self.iterate_unique_trackers() if isinstance(tracker, GraphMetricTracker)]
+    def generate_graphs(self, filename_prefix=None, single_query=False):
+        valid_trackers = [tracker for tracker, _ in self.iterate_unique_trackers() if isinstance(tracker, GraphMetricTracker) and (single_query == isinstance(tracker, IndividualQueryTracker))]
         if not valid_trackers:
             print("No graphs to generate.")
             return
@@ -84,7 +84,7 @@ class AbstractTrackingRunner:
             plt.show()  # Display graph
 
     def end_experiment(self, title):
-        for (tracker, metric) in self.iterate_unique_trackers():
+        for (tracker, metrics) in self.iterate_unique_trackers():
             tracker.end_experiment(title)
 
     def start_tracking_server(self, port=5556):
@@ -150,17 +150,17 @@ class AbstractTrackingRunner:
 
         return return_v
     
-    def generate_json(self):
-        json_trackers = [tracker for tracker, _ in self.iterate_unique_trackers() if isinstance(tracker, JsonMetricTracker)]
+    def generate_json(self, single_query=False):
+        json_trackers = [tracker for tracker, _ in self.iterate_unique_trackers() if isinstance(tracker, JsonMetricTracker) and (single_query == isinstance(tracker, IndividualQueryTracker))]
         data = dict()
         for tracker in json_trackers:
             data[tracker.get_json_key()] = tracker.get_json()
         return data
     
-    def generate_output_dict(self):
-        json_trackers = [tracker.get_id() for tracker, _ in self.iterate_unique_trackers() if isinstance(tracker, JsonMetricTracker)]
-        text_trackers = [tracker.get_id() for tracker, _ in self.iterate_unique_trackers() if isinstance(tracker, TextMetricTracker)]
-        graph_trackers = [tracker.get_id() for tracker, _ in self.iterate_unique_trackers() if isinstance(tracker, GraphMetricTracker)]
+    def generate_output_dict(self, single_query=False):
+        json_trackers = [tracker.get_id() for tracker, _ in self.iterate_unique_trackers() if isinstance(tracker, JsonMetricTracker) and (single_query == isinstance(tracker, IndividualQueryTracker))]
+        text_trackers = [tracker.get_id() for tracker, _ in self.iterate_unique_trackers() if isinstance(tracker, TextMetricTracker) and (single_query == isinstance(tracker, IndividualQueryTracker))]
+        graph_trackers = [tracker.get_id() for tracker, _ in self.iterate_unique_trackers() if isinstance(tracker, GraphMetricTracker) and (single_query == isinstance(tracker, IndividualQueryTracker))]
         return {
             "json": json_trackers,
             "text": text_trackers,
@@ -175,7 +175,7 @@ class ConstructionTrackingRunner(AbstractTrackingRunner):
         metric_name = data["metric_name"]
 
         if metric_name == "construction_start":
-            for (tracker,metric) in self.iterate_unique_trackers():
+            for (tracker,_) in self.iterate_unique_trackers():
                 tracker.initialize_construction(data['value'])
         else:
             if metric_name in self.metric_handlers:
@@ -183,9 +183,11 @@ class ConstructionTrackingRunner(AbstractTrackingRunner):
                     tracker.handle_metric_event(data['value'])
 
 class QueryTrackerRunner(AbstractTrackingRunner):
-    def __init__(self, port=5556, metric_handlers: List[AbstractQueryTracker]=None):
+    def __init__(self, exp_folder, individualQDataCount=10, port=5556, metric_handlers: List[AbstractQueryTracker]=None):
         self.experiment_stats = dict()
         self.completed_queries = 0
+        self.individualQDataCount = individualQDataCount
+        self.exp_folder = exp_folder
         super().__init__(port=port, metric_handlers=metric_handlers)
 
     def handle_metric_event(self, data):
@@ -193,14 +195,22 @@ class QueryTrackerRunner(AbstractTrackingRunner):
         # print(data)
 
         if metric_name == "end_query":
-            self.completed_queries += 1
-            # if self.completed_queries / self.experiment_stats['queries']:
-            for (tracker, metric) in self.iterate_unique_trackers():
+            for (tracker, _) in self.iterate_unique_trackers():
                 tracker.end_query(data['value'])
+
+            if self.completed_queries < self.individualQDataCount:
+                query_dir = os.path.join(self.exp_folder, f"query_{self.completed_queries}")
+                os.makedirs(query_dir, exist_ok=True)
+                self.generate_graphs(filename_prefix=query_dir, single_query=True)
+                json_data = self.generate_json(single_query=True)
+                with open(os.path.join(query_dir, "metrics.json"), "w") as f:
+                    json.dump(json_data, f, indent=4)
+            self.completed_queries += 1
+            
         elif metric_name == "configure_experiment":
             self.completed_queries = 0
             self.experiment_stats = data['value']
-            for (tracker, metric) in self.iterate_unique_trackers():
+            for (tracker, metrics) in self.iterate_unique_trackers():
                 tracker.configure_experiment_stats(data['value'])
         else:
             if metric_name in self.metric_handlers:

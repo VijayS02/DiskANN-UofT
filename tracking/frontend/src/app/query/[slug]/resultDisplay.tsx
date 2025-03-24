@@ -23,6 +23,7 @@ import {
     AccordionItem,
     AccordionTrigger,
   } from "@/components/ui/accordion"
+import { Button } from "@/components/ui/button";
 
 
 export default function ResultDisplay({id} : {id: string}) {
@@ -36,13 +37,33 @@ export default function ResultDisplay({id} : {id: string}) {
             {data && <div>
                 <div className="grid grid-cols-2 gap-4">
                     <StatDisplay res={data}/>
-                    <ImageDisplay url_base={`/api/query_image/${id}`} image_metrics={data.output_types['graph']}/>
-                    {/* {data.data?.BestKParentMetric && <BestKParentDisplay data={data.data.BestKParentMetric}/>} */}
+                    <ImageDisplay full_col url_base={`/api/query_image/${id}`} image_metrics={data.output_types['graph']}/>
+                    <IndividualDisplay id={id} query_info={data}/>
                 </div>
-                
             </div>}
         </div>
     )
+}
+
+
+function IndividualDisplay({id, query_info} : {id: string, query_info: ResultInfo}) {
+    const [queryNum, setQueryNum] = useState(0);
+    const max_query = query_info.individual_count;
+
+    return <div className="col-span-full my-2 space-y-3">
+        <div className="flex space-x-3 justify-center">
+        <div className="text-2xl">Individual Query : {queryNum} of {max_query-1}</div>
+        <div className="space-x-2">
+            <Button size={"sm"} onClick={() => setQueryNum((queryNum - 1 + max_query) % max_query)}>Previous</Button>
+            <Button size={"sm"} onClick={() => setQueryNum((queryNum + 1) % max_query)}>Next</Button>
+        </div>
+        </div>
+        <div className="grid-cols-2 grid">
+        <ImageDisplay url_base={`/api/indv_query_image/${id}/${queryNum}`} image_metrics={query_info.individual_types['graph']}/>
+        <JsonRender id={id} query_ind={queryNum}/>
+        </div>
+    </div>
+
 }
 
 
@@ -199,7 +220,16 @@ function StatDisplay({res} : {res: ResultInfo}) {
 //     </div>;
 // }
 
-function BestKParentDisplay({ data }: { data: Number[][][] }) {
+function JsonRender({id, query_ind} : {id: string, query_ind: number}) {
+    const { data, loading, error } = useFetch<any>(`/indv_query_json/${id}/${query_ind}`);
+    return <>
+        {loading && <div>Loading...</div>}
+        {error && <div className="text-red-500 mt-2">{error}</div>}
+        {data && <BestKParentDisplay data={data['BestKParentMetric']}/>}
+    </>
+}
+
+function BestKParentDisplay({ data }: { data: Number[][] }) {
     const containerRef = useRef<HTMLDivElement | null>(null);
     const [sigmaInstance, setSigmaInstance] = useState<Sigma | null>(null);
 
@@ -220,37 +250,35 @@ function BestKParentDisplay({ data }: { data: Number[][][] }) {
         g.setDefaultEdgeLabel(() => ({}));
 
         // **Step 1️⃣: Process Paths and Create Nodes & Edges**
-        data.slice(0,1).forEach((pathList) => {
-            pathList.forEach((path) => {
-                if (path.length === 0) return;
-                let prevNode: string | null = null;
+        data.forEach((path) => {
+            if (path.length === 0) return;
+            let prevNode: string | null = null;
 
-                path.forEach((node, index) => {
-                    const nodeId = node.toString();
+            path.forEach((node, index) => {
+                const nodeId = node.toString();
 
-                    if (!graph.hasNode(nodeId)) {
-                        let color = "#007bff";
-                        if (index === 0) color = "#28a745";
-                        graph.addNode(nodeId, {
-                            label: `${nodeId}`,
-                            size: 5,
-                            color: color,
-                        });
-                        nodeSet.add(nodeId);
-                        g.setNode(nodeId, { width: 50, height: 50 });
-                    }
+                if (!graph.hasNode(nodeId)) {
+                    let color = "#007bff";
+                    if (index === 0) color = "#28a745";
+                    graph.addNode(nodeId, {
+                        label: `${nodeId}`,
+                        size: 5,
+                        color: color,
+                    });
+                    nodeSet.add(nodeId);
+                    g.setNode(nodeId, { width: 50, height: 50 });
+                }
 
-                    if (index === path.length - 1) {
-                        endNodes.add(nodeId);
-                    }
+                if (index === path.length - 1) {
+                    endNodes.add(nodeId);
+                }
 
-                    if (prevNode && !graph.hasEdge(prevNode, nodeId)) {
-                        graph.addEdge(prevNode, nodeId, { size: 1, color: "#aaa" });
-                        g.setEdge(prevNode, nodeId);
-                    }
+                if (prevNode && !graph.hasEdge(prevNode, nodeId)) {
+                    graph.addEdge(prevNode, nodeId, { size: 1, color: "#aaa" });
+                    g.setEdge(prevNode, nodeId);
+                }
 
-                    prevNode = nodeId;
-                });
+                prevNode = nodeId;
             });
         });
 
@@ -281,7 +309,7 @@ function BestKParentDisplay({ data }: { data: Number[][][] }) {
     }, [data]);
 
     return (
-        <div className="p-3">
+        <div className="p-3 min-h-[40vh] h-full">
             <div ref={containerRef} className="w-full rounded h-full bg-slate-100" />
         </div>
     );

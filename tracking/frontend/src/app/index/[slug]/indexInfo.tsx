@@ -28,7 +28,7 @@ export default function IndexInfo({index_name} : {index_name: string}) {
                 <div className="col-span-full">
                     <IndexStatDisplay res={data} showMetrics/>
                 </div>
-                <ImageDisplay url_base={`/api/index_image/${index_name}`} image_metrics={data.output_types['graph']}/>
+                <ImageDisplay full_col url_base={`/api/index_image/${index_name}`} image_metrics={data.output_types['graph']}/>
             </div>
             
         </div>}

@@ -13,6 +13,8 @@ from query_tracker import get_available_query_metrics, initialize_query_tracker
 import time
 import hashlib
 from datetime import datetime
+import matplotlib
+matplotlib.use('Agg')
 
 
 
@@ -257,7 +259,7 @@ def trace_query(index_path, query_file, l=50, k=10, metrics=[]):
     # Send results to /dev/null to avoid cluttering the output
 
 
-    tracker = initialize_query_tracker(metrics)
+    tracker = initialize_query_tracker(metrics, result_path)
     tracking_port = 5555
     command = [
         search_memory_index,
@@ -322,7 +324,9 @@ def trace_query(index_path, query_file, l=50, k=10, metrics=[]):
             "data": json_data,
             "metrics": metrics,
             "time": int(datetime.now().timestamp()),
-            "output_types": tracker.generate_output_dict()
+            "output_types": tracker.generate_output_dict(),
+            "individual_types": tracker.generate_output_dict(single_query=True),
+            "individual_count": 10
         }))
         
     return "Query complete!"
@@ -486,6 +490,25 @@ def get_json(id):
         return 404
     
     return jsonify(json.load(open(json_path)))
+
+@app.route("/indv_query_json/<path:id>/<path:query_id>")
+def get_query_ind_json(id, query_id):
+    json_path = os.path.join(RESULT_PATH, id, f"query_{query_id}", f"metrics.json")
+    print(json_path)
+    
+    if not os.path.exists(json_path):
+        return 404
+    
+    return jsonify(json.load(open(json_path)))
+
+@app.route("/indv_query_image/<path:id>/<path:query_id>/<path:metric>")
+def get_query_ind_image(id, query_id, metric):
+    image_path = os.path.join(RESULT_PATH, id, f"query_{query_id}", f"{metric}.png")
+    
+    if not os.path.exists(image_path):
+        return 404  # Return 404 if the image doesn't exist
+    
+    return send_file(image_path, mimetype="image/png")
 
 @app.route("/index_json/<path:id>")
 def get_index_json(id):

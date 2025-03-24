@@ -169,7 +169,11 @@ export interface ResultInfo {
     metrics: string[];
     output_types: {
         [key: string]: string[];
-    }
+    },
+    individual_types: {
+        [key: string]: string[];
+    },
+    individual_count: number;
 }
 
 function Results(){

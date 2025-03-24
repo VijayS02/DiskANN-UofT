@@ -1,6 +1,6 @@
 from matplotlib.axes import Axes
 
-from lib.abstract_trackers import AbstractQueryTracker, JsonMetricTracker
+from lib.abstract_trackers import AbstractQueryTracker, IndividualQueryTracker, JsonMetricTracker
 from lib.basic_metric_types import FrequencyTracker, ChangeOverTimeTracker
 from lib.tracker import QueryTrackerRunner
 import subprocess
@@ -17,12 +17,6 @@ class NodeVisitedDistribution(FrequencyTracker, AbstractQueryTracker):
         self.add_data_point(self.edges_visited)
         self.edges_visited = 0
 
-    def has_text_output(self):
-        return False
-
-    def print_text_output(self):
-        return None
-
     def handle_metric_event(self, metric_data):
         self.edges_visited += 1
 
@@ -37,12 +31,6 @@ class QueryTimeDistribution(FrequencyTracker, AbstractQueryTracker):
     def end_query(self, data):
         self.add_data_point(data['querytime'])
 
-    def has_text_output(self):
-        return False
-
-    def print_text_output(self):
-        return None
-
     def handle_metric_event(self, metric_data):
         pass
 
@@ -56,12 +44,6 @@ class AverageDistancePerStep(ChangeOverTimeTracker, AbstractQueryTracker):
         self.store = []
     def end_query(self, data):
         self.pos = 0
-
-    def has_text_output(self):
-        return False
-
-    def print_text_output(self):
-        return None
 
     def handle_metric_event(self, metric_data):
         val = metric_data['distance']
@@ -85,13 +67,6 @@ class MinDistanceConvergence(FrequencyTracker, AbstractQueryTracker):
         self.index = 0
         self.min_index = -1
 
-
-    def has_text_output(self):
-        return False
-
-    def print_text_output(self):
-        return None
-
     def handle_metric_event(self, metric_data):
         dist = metric_data['distance']
         if dist < self.min_dist:
@@ -105,9 +80,9 @@ class MinDistanceConvergence(FrequencyTracker, AbstractQueryTracker):
 
 
 
-class BestKParentMetric(JsonMetricTracker, AbstractQueryTracker):
+class BestKParentMetric(JsonMetricTracker, IndividualQueryTracker):
     def __init__(self):
-        super().__init__("BestKParentMetric", "node_connection", label="Best K Parent Metric")
+        super().__init__("BestKParentMetric", "node_connection", label="Best K Parent Metric (Individual)")
         self.parents = dict()
         self.computed = False
         self.results = []
@@ -124,7 +99,7 @@ class BestKParentMetric(JsonMetricTracker, AbstractQueryTracker):
             paths = []
             for node in best_k:
                 paths.append(self.generate_path(node))
-            self.results.append(paths)
+            self.results = paths
 
     def handle_metric_event(self, metric_data):
         if metric_data['child'] not in self.parents:
@@ -137,21 +112,40 @@ class BestKParentMetric(JsonMetricTracker, AbstractQueryTracker):
         return self.results
 
 
+class DistancePerStepIndiv(ChangeOverTimeTracker, IndividualQueryTracker):
+    def __init__(self):
+        super().__init__('indv_dist_per_step', metrics=["visited_node"], label="Distance Per Step (Individual)")
+        self.pos = 0
+        self.store = []
+
+    def end_query(self, data):
+        self.end_experiment('Query')
+
+    def handle_metric_event(self, metric_data):
+        val = metric_data['distance']
+        self.add_data_point(val, i=self.pos)
+        self.pos += 1
+
+    def get_graph_props(self):
+        return {"x": "Step", "y": "Distance", "title": "Distance per step" }
+
+
 METRIC_LIST = [
     NodeVisitedDistribution,
     QueryTimeDistribution,
     AverageDistancePerStep,
     MinDistanceConvergence,
-    BestKParentMetric
+    BestKParentMetric,
+    DistancePerStepIndiv
 ]
 
 
 METRICS = {metric().get_id(): {"label": metric().get_label(), "class": metric} for metric in METRIC_LIST}
 
-def initialize_query_tracker(selected_metrics):
+def initialize_query_tracker(selected_metrics, exp_folder):
     metric_handlers = [METRICS[metric]['class']() for metric in selected_metrics if metric in METRICS]
 
-    tracker = QueryTrackerRunner(metric_handlers=metric_handlers)
+    tracker = QueryTrackerRunner(exp_folder, metric_handlers=metric_handlers)
     return tracker
 
 

@@ -81,6 +81,8 @@ class FrequencyTracker(GraphMetricTracker, ABC):
 
         set_graph_props(ax, self.get_graph_props())
         ax.legend()
+        self.counts = []
+        self.experiments = dict()
 
 
 class ChangeOverTimeTracker(GraphMetricTracker, ABC):
@@ -141,9 +143,7 @@ class ChangeOverTimeTracker(GraphMetricTracker, ABC):
         else:
              y_values = self.time_series
 
-        print(len(self.time_series))
         self.experiments[title] = (x_values,y_values)
-
         self.time_series = []
 
     def generate_subplot(self,ax):
@@ -156,3 +156,6 @@ class ChangeOverTimeTracker(GraphMetricTracker, ABC):
 
         set_graph_props(ax, self.get_graph_props())
         ax.legend()
+        self.time_series = []
+        self.experiments = dict()
+        self.counts = []

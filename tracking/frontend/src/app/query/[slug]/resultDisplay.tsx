@@ -225,13 +225,14 @@ function JsonRender({id, query_ind} : {id: string, query_ind: number}) {
     return <>
         {loading && <div>Loading...</div>}
         {error && <div className="text-red-500 mt-2">{error}</div>}
-        {data && <BestKParentDisplay data={data['BestKParentMetric']}/>}
+        {data && data['IndividualQueryNodeExploration'] && <IndividualQueryNodeExploration data={data['IndividualQueryNodeExploration']}/>}
     </>
 }
 
-function BestKParentDisplay({ data }: { data: Number[][] }) {
+function IndividualQueryNodeExploration({ data }: { data: any }) {
     const containerRef = useRef<HTMLDivElement | null>(null);
     const [sigmaInstance, setSigmaInstance] = useState<Sigma | null>(null);
+    const animationRef = useRef<NodeJS.Timeout | null>(null); // Store animation reference
 
     useEffect(() => {
         if (typeof window === "undefined" || !containerRef.current || !data) return;
@@ -243,68 +244,86 @@ function BestKParentDisplay({ data }: { data: Number[][] }) {
         }
 
         const graph = new Graph();
-        const nodeSet = new Set();
-        const endNodes = new Set();
         const g = new dagre.graphlib.Graph();
         g.setGraph({ rankdir: "TB", nodesep: 50, edgesep: 10, ranksep: 50 });
         g.setDefaultEdgeLabel(() => ({}));
 
-        // **Step 1️⃣: Process Paths and Create Nodes & Edges**
-        data.forEach((path) => {
-            if (path.length === 0) return;
-            let prevNode: string | null = null;
+        const bestKSet = new Set(data.best_k.map(String));
+        const visitOrderSet = new Set(data.visit_order.map(String));
+        const firstVisitedNode = data.visit_order[0].toString();
+        const visitOrderMap = new Map();
 
-            path.forEach((node, index) => {
-                const nodeId = node.toString();
-
-                if (!graph.hasNode(nodeId)) {
-                    let color = "#007bff";
-                    if (index === 0) color = "#28a745";
-                    graph.addNode(nodeId, {
-                        label: `${nodeId}`,
-                        size: 5,
-                        color: color,
-                    });
-                    nodeSet.add(nodeId);
-                    g.setNode(nodeId, { width: 50, height: 50 });
-                }
-
-                if (index === path.length - 1) {
-                    endNodes.add(nodeId);
-                }
-
-                if (prevNode && !graph.hasEdge(prevNode, nodeId)) {
-                    graph.addEdge(prevNode, nodeId, { size: 1, color: "#aaa" });
-                    g.setEdge(prevNode, nodeId);
-                }
-
-                prevNode = nodeId;
-            });
+        data.visit_order.forEach((node, index) => {
+            visitOrderMap.set(node.toString(), index + 1);
         });
 
-        endNodes.forEach((endNodeId) => {
-            graph.mergeNodeAttributes(endNodeId, {
-                color: "#ff0000",
-                size: 7,
-            });
+        Object.entries(data.parents).forEach(([child, parent]) => {
+            const parentId = typeof parent === "string" || typeof parent === "number" ? parent.toString() : "";
+            const childId = child.toString();
+
+            if (!visitOrderSet.has(parentId) || !visitOrderSet.has(childId)) return;
+
+            if (!graph.hasNode(parentId)) {
+                let color = "#007bff";
+                if (parentId === firstVisitedNode) color = "#a0a0a0";
+                if (bestKSet.has(parentId)) color = "#ff0000";
+                graph.addNode(parentId, { label: `(${visitOrderMap.get(parentId)}) ${parentId}`, size: 5, color });
+                g.setNode(parentId, { width: 50, height: 50 });
+            }
+
+            if (!graph.hasNode(childId)) {
+                let color = "#007bff";
+                if (childId === firstVisitedNode) color = "#a0a0a0";
+                if (bestKSet.has(childId)) color = "#ff0000";
+                graph.addNode(childId, { label: `(${visitOrderMap.get(childId)}) ${childId}`, size: 5, color });
+                g.setNode(childId, { width: 50, height: 50 });
+            }
+
+            if (!graph.hasEdge(parentId, childId)) {
+                graph.addEdge(parentId, childId, { size: 1, color: "#aaa" });
+                g.setEdge(parentId, childId);
+            }
         });
 
-        // **Step 3️⃣: Compute Layout using Dagre**
         dagre.layout(g);
 
-        // Assign computed positions to graph nodes
         g.nodes().forEach((nodeId) => {
             const { x, y } = g.node(nodeId);
             graph.setNodeAttribute(nodeId, "x", x);
             graph.setNodeAttribute(nodeId, "y", y);
         });
 
-        // **Step 4️⃣: Render Graph with Sigma.js**
         const newSigmaInstance = new Sigma(graph, containerRef.current);
         setSigmaInstance(newSigmaInstance);
 
+        // **Step 5️⃣: Animate Node Visit Order**
+        let step = 0;
+        const animateVisitOrder = () => {
+            if (step >= data.visit_order.length) return;
+            const nodeId = data.visit_order[step].toString();
+            
+            // Highlight visited node in green and increase size
+            graph.setNodeAttribute(nodeId, "color", "#00ff00"); 
+            graph.setNodeAttribute(nodeId, "size", 8);
+
+            setTimeout(() => {
+                // Revert back to original color and size after delay
+                let originalColor = "#007bff";
+                if (nodeId === firstVisitedNode) originalColor = "#a0a0a0";
+                if (bestKSet.has(nodeId)) originalColor = "#ff0000";
+                graph.setNodeAttribute(nodeId, "color", originalColor);
+                graph.setNodeAttribute(nodeId, "size", 5);
+                
+                step++;
+                animateVisitOrder(); // Recursively continue animation
+            }, 100); // 600ms delay per step
+        };
+
+        animationRef.current = setTimeout(animateVisitOrder, 1000);
+
         return () => {
             newSigmaInstance.kill();
+            if (animationRef.current) clearTimeout(animationRef.current);
         };
     }, [data]);
 

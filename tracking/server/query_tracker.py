@@ -17,7 +17,7 @@ class NodeVisitedDistribution(FrequencyTracker, AbstractQueryTracker):
         self.add_data_point(self.edges_visited)
         self.edges_visited = 0
 
-    def handle_metric_event(self, metric_data):
+    def handle_metric_event(self, metric_name, metric_data):
         self.edges_visited += 1
 
     def get_graph_props(self):
@@ -31,7 +31,7 @@ class QueryTimeDistribution(FrequencyTracker, AbstractQueryTracker):
     def end_query(self, data):
         self.add_data_point(data['querytime'])
 
-    def handle_metric_event(self, metric_data):
+    def handle_metric_event(self, metric_name, metric_data):
         pass
 
     def get_graph_props(self):
@@ -45,7 +45,7 @@ class AverageDistancePerStep(ChangeOverTimeTracker, AbstractQueryTracker):
     def end_query(self, data):
         self.pos = 0
 
-    def handle_metric_event(self, metric_data):
+    def handle_metric_event(self, metric_name, metric_data):
         val = metric_data['distance']
         self.add_data_point(val, i=self.pos)
         self.pos += 1
@@ -67,7 +67,7 @@ class MinDistanceConvergence(FrequencyTracker, AbstractQueryTracker):
         self.index = 0
         self.min_index = -1
 
-    def handle_metric_event(self, metric_data):
+    def handle_metric_event(self, metric_name, metric_data):
         dist = metric_data['distance']
         if dist < self.min_dist:
             self.min_dist = dist
@@ -80,30 +80,28 @@ class MinDistanceConvergence(FrequencyTracker, AbstractQueryTracker):
 
 
 
-class BestKParentMetric(JsonMetricTracker, IndividualQueryTracker):
+class NodeExplorationIndividual(JsonMetricTracker, IndividualQueryTracker):
     def __init__(self):
-        super().__init__("BestKParentMetric", "node_connection", label="Best K Parent Metric (Individual)")
+        super().__init__("IndividualQueryNodeExploration", "indiv_node_explore_graph", metrics=["node_connection", "visited_node"], label="Node exploration (Individual)")
         self.parents = dict()
-        self.computed = False
-        self.results = []
-
-    def generate_path(self, next_node):
-        if next_node not in self.parents:
-            return [next_node]
-        else:
-            return self.generate_path(self.parents[next_node]) + [next_node]
+        self.results = dict()
+        self.visit_order = []
 
     def end_query(self, data):
         if len(data['best_k']) != 0:
-            best_k = data['best_k']
-            paths = []
-            for node in best_k:
-                paths.append(self.generate_path(node))
-            self.results = paths
+            self.results['best_k'] = data['best_k']
+            self.results['parents'] = self.parents
+            self.results['visit_order'] = self.visit_order
+            self.parents = dict()
+            self.visit_order = []
 
-    def handle_metric_event(self, metric_data):
-        if metric_data['child'] not in self.parents:
-            self.parents[metric_data['child']] = metric_data['parent']
+
+    def handle_metric_event(self, metric_name, metric_data):
+        if metric_name == "node_connection":
+            if metric_data['child'] not in self.parents:
+                self.parents[metric_data['child']] = metric_data['parent']
+        elif metric_name == "visited_node":
+            self.visit_order.append(metric_data['nodeid'])
 
     def end_experiment(self, title):
         pass
@@ -121,7 +119,7 @@ class DistancePerStepIndiv(ChangeOverTimeTracker, IndividualQueryTracker):
     def end_query(self, data):
         self.end_experiment('Query')
 
-    def handle_metric_event(self, metric_data):
+    def handle_metric_event(self, metric_name, metric_data):
         val = metric_data['distance']
         self.add_data_point(val, i=self.pos)
         self.pos += 1
@@ -135,7 +133,7 @@ METRIC_LIST = [
     QueryTimeDistribution,
     AverageDistancePerStep,
     MinDistanceConvergence,
-    BestKParentMetric,
+    NodeExplorationIndividual,
     DistancePerStepIndiv
 ]
 

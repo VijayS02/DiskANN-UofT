@@ -180,7 +180,7 @@ class ConstructionTrackingRunner(AbstractTrackingRunner):
         else:
             if metric_name in self.metric_handlers:
                 for tracker in self.metric_handlers[metric_name]:
-                    tracker.handle_metric_event(data['value'])
+                    tracker.handle_metric_event(metric_name, data['value'])
 
 class QueryTrackerRunner(AbstractTrackingRunner):
     def __init__(self, exp_folder, individualQDataCount=10, port=5556, metric_handlers: List[AbstractQueryTracker]=None):
@@ -215,6 +215,6 @@ class QueryTrackerRunner(AbstractTrackingRunner):
         else:
             if metric_name in self.metric_handlers:
                 for tracker in self.metric_handlers[metric_name]:
-                    tracker.handle_metric_event(data['value'])
+                    tracker.handle_metric_event(metric_name, data['value'])
 
 

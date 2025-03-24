@@ -23,7 +23,7 @@ class AbstractMetricTracker:
         return self.metrics
 
     @abstractmethod
-    def handle_metric_event(self, metric_data):
+    def handle_metric_event(self, metric_name, metric_data):
         """
         Handle the data when this metric's event fires. This should update any internal state in accordance with the
         data provided in the metric_data.

@@ -24,7 +24,7 @@ class AddEdgeCountTracker(FrequencyTracker, AbstractConstructionTracker):
         self.edge_usage = dict()
         self.exp_text_data = dict()
 
-    def handle_metric_event(self, metric_data):
+    def handle_metric_event(self, metric_name, metric_data):
         self.add_data_point(metric_data)
         self.total_edges += metric_data
 
@@ -60,7 +60,7 @@ class ConstructionPathLengthFreqTracker(FrequencyTracker, AbstractConstructionTr
     def initialize_construction(self, construction_params):
         pass
 
-    def handle_metric_event(self, metric_data):
+    def handle_metric_event(self, metric_name, metric_data):
         self.add_data_point(metric_data)
 
 class ConstructionPathLengthOverTimeTracker(ChangeOverTimeTracker, AbstractConstructionTracker):
@@ -74,7 +74,7 @@ class ConstructionPathLengthOverTimeTracker(ChangeOverTimeTracker, AbstractConst
         print("Construction Started!")
         print(construction_params)
 
-    def handle_metric_event(self, metric_data):
+    def handle_metric_event(self, metric_name, metric_data):
         self.add_data_point(metric_data)
 
 
@@ -88,7 +88,7 @@ class NodeDistanceTracker(GraphMetricTracker, AbstractConstructionTracker):
     def initialize_construction(self, construction_params):
         pass
 
-    def handle_metric_event(self, metric_data):
+    def handle_metric_event(self, metric_name, metric_data):
         """Stores sorted neighbor distances per index across nodes."""
         sorted_distances = sorted(metric_data['neighbor_distances'])
         for i, dist in enumerate(sorted_distances):

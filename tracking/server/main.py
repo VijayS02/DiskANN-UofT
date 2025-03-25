@@ -15,7 +15,7 @@ import hashlib
 from datetime import datetime
 import matplotlib
 
-from lib.read_graph import load_graph_from_binary
+from lib.read_utils import get_bin_file_info, load_graph_from_binary
 matplotlib.use('Agg')
 
 
@@ -182,6 +182,7 @@ def construct_graph(index_name, base_file_name, r=32, l_build=50, alpha=1.2, sat
     build_memory_index = os.path.join(BUILD_DIR, "apps", "build_memory_index")
     tracker = initialize_construction_tracker(metrics)
     tracking_port = 5555
+    nodes, ndims = get_bin_file_info(base_file)
 
     command = [
             build_memory_index,
@@ -236,6 +237,8 @@ def construct_graph(index_name, base_file_name, r=32, l_build=50, alpha=1.2, sat
             "r": r,
             "l_build": l_build,
             "alpha": alpha,
+            "n": nodes,
+            "dimensions": ndims,
             "saturate_graph": saturate_graph,
             "metrics": metrics,
             "output_types": tracker.generate_output_dict()

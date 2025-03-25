@@ -15,6 +15,20 @@ def load_graph_from_binary(filename):
     print(len(graph))
     return graph
 
+def get_bin_file_info(filename):
+    """
+    Reads a binary file and returns the number of nodes (points) and their dimensions.
+    
+    Args:
+        filename (str): Path to the binary file.
+    
+    Returns:
+        tuple: (Number of nodes, Number of dimensions per node)
+    """
+    with open(filename, "rb") as f:
+        # Read first 8 bytes: [4 bytes for npts] + [4 bytes for ndims]
+        npts, ndims = struct.unpack("ii", f.read(8))  # Read two int32 values
+        return npts, ndims
 
 def load_graph_from_csv(filename):
     """Reads a CSV file and returns a graph as an adjacency list (dict[int, list[int]])."""

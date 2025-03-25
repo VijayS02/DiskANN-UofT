@@ -184,7 +184,8 @@ class UsefulEdgesDistribution(FrequencyTracker,TextMetricTracker, AbstractQueryT
 
     def end_experiment(self, title):
         for edge, uses in self.edge_uses.items():
-            self.add_data_point(uses)
+            if uses < 200:
+                self.add_data_point(uses)
         self.end_experiment_graph(title)
 
     def print_text_output(self):

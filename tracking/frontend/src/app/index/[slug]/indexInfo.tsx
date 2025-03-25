@@ -1,6 +1,6 @@
 'use client'
 import { Index } from "@/app/page";
-import useFetch from "@/util";
+import useFetch, { toSuperscript } from "@/util";
 
 import {
     Table,
@@ -66,6 +66,10 @@ function IndexStatDisplay({res, showMetrics} : {res: Index, showMetrics?: boolea
       <TableRow>
         <TableCell className="font-medium">Alpha</TableCell>
         <TableCell className="text-right">{res.alpha}</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Number of Vectors</TableCell>
+        <TableCell className="text-right">{`${res.n.toLocaleString()}  ∈  ℝ${toSuperscript(res.dimensions)}`}</TableCell>
       </TableRow>
       <TableRow>
         <TableCell className="font-medium">Saturated Graph?</TableCell>

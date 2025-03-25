@@ -2,7 +2,7 @@
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
-import useFetch from "@/util";
+import useFetch, { toSuperscript } from "@/util";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import MultiSelect from "@/components/ui/multiselect";
@@ -158,6 +158,8 @@ export interface Index {
   saturate_graph: boolean;
   id: string;
   metrics: string[];
+  n: number;
+  dimensions: number;
   output_types: {
     [key: string]: string[];
   }
@@ -202,6 +204,10 @@ function AvailableIndexes(){
               <div>
                   <div className="text-muted-foreground mb-1 mx-1">Alpha α (Exponential Factor)</div>
                   <div className="text-lg mx-1">{index.alpha}</div>
+              </div>
+              <div>
+                  <div className="text-muted-foreground mb-1 mx-1">N (Number of vectors)</div>
+                  <div className="text-lg mx-1">{`${index.n.toLocaleString()}  ∈  ℝ${toSuperscript(index.dimensions)}`}</div>
               </div>
               <div>
                   <div className="text-muted-foreground mb-1 mx-1">Saturate Edge Budget?</div>

@@ -263,7 +263,10 @@ def trace_query(index_path, query_file_name, l=50, k=10, metrics=[]):
     with open(os.path.join(index_path, "index_info.json"), "r") as f:
         index_info = json.load(f)
 
-    gt_file = generate_gt_file(index_info["base_file"], query_file, k)
+    # TODO: Base file may change since index creation. Need to handle this
+    # Maybe copy the base file to the index directory?
+    base_file = os.path.join(UPLOADS_DIR, index_info["base_file"])
+    gt_file = generate_gt_file(base_file, query_file, k)
     
     search_memory_index = os.path.join(BUILD_DIR, "apps", "search_memory_index")
     # Send results to /dev/null to avoid cluttering the output

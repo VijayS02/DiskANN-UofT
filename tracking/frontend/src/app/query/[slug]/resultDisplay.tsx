@@ -109,7 +109,7 @@ function StatDisplay({res} : {res: ResultInfo}) {
       <TableRow>
         <TableCell className="font-medium">Metrics Tracked</TableCell>
         <TableCell className="text-right">
-          <div className="ml-auto justify-end flex divide-x-1 max-w-1/2 flex-wrap">
+          <div className="ml-auto justify-end flex divide-x-1 max-w-2/3 flex-wrap">
             {selectedMetrics.length > 0 ? selectedMetrics.map((metric, i) => (
               <div key={i} className={i !== selectedMetrics.length -1 ? "px-3" : "pl-3"}>{metric}</div>
             )) : "None"}

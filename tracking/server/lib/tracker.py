@@ -1,4 +1,5 @@
 import os
+from queue import Queue
 import time
 from abc import abstractmethod
 from typing import List, Dict
@@ -19,6 +20,7 @@ class AbstractTrackingRunner:
         self.port = port
         self.metric_handlers : Dict[str, List[AbstractMetricTracker]] = dict()
         self.stop_tracking = False
+        self.message_queue = Queue()
         for metric_handler in metric_handlers:
             for metric_name in metric_handler.get_subscribed_metrics():
                 self.metric_handlers.setdefault(metric_name, []).append(metric_handler)
@@ -100,11 +102,10 @@ class AbstractTrackingRunner:
             try:
                 socket.bind(f"tcp://*:{port}")
                 print(f"Listening for metrics on port {port}...")
-                messages = []
                 while not self.stop_tracking:
                     try:
                         msg = socket.recv_string()
-                        messages.append(msg)
+                        self.message_queue.put(msg)
                     except zmq.Again:
                         # Timeout occurred, just continue
                         pass
@@ -112,8 +113,8 @@ class AbstractTrackingRunner:
                         print("Invalid JSON format received, skipping...")
                 
                 print("Received shutdown signal, processing metrics...")
-                for msg in messages:
-                    data = json.loads(msg)
+                while not self.message_queue.empty():
+                    data = json.loads(self.message_queue.get())
                     self.handle_metric_event(data)
 
             except zmq.error.ZMQError as e:
@@ -131,6 +132,10 @@ class AbstractTrackingRunner:
         """Stop the ZMQ tracking server thread"""
         if self.tracking_thread:
             self.stop_tracking = True
+
+            while not self.message_queue.empty():
+                time.sleep(0.1)
+
             self.tracking_thread.join(timeout=5)
             self.tracking_thread = None
 
@@ -146,6 +151,9 @@ class AbstractTrackingRunner:
             # Give time for any final messages to be received
             time.sleep(3)
 
+        except Exception as e:
+            print(f"Error in tracing program: {e}")
+            raise e
         finally:
             # Stop the tracking server
             self.stop_tracking_server()

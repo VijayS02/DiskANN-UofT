@@ -85,6 +85,9 @@ def stream_func(func):
             except Exception as e:
                 # Capture any errors
                 error_msg = f"ERROR: {str(e)}"
+                # print stack trace
+                import traceback
+                traceback.print_exc()
                 socketio.emit("terminal_output", {"status": error_msg})
                 result_container['error'] = e
             finally:
@@ -239,7 +242,7 @@ def construct_graph(index_name, base_file_name, r=32, l_build=50, alpha=1.2, sat
         }))
 
     tracker.generate_graphs(index_path)
-
+    print("Graph construction complete!")
     return "Graph construction complete!"
 
 @stream_func
@@ -345,7 +348,8 @@ def trace_query(index_path, query_file_name, l=50, k=10, metrics=[]):
             "individual_types": tracker.generate_output_dict(single_query=True),
             "individual_count": 10
         }))
-        
+    
+    print("Query complete!")
     return "Query complete!"
 
 

@@ -1,0 +1,24 @@
+import os
+import threading
+from dotenv import load_dotenv
+from flask_socketio import SocketIO
+
+SOCKETIO = SocketIO(cors_allowed_origins="*")
+load_dotenv()
+
+
+PROJECT_ROOT = os.getenv("DISK_ANN_ROOT")
+STORAGE_ROOT = os.getenv("STORAGE_ROOT")
+
+UPLOADS_DIR = os.path.join(STORAGE_ROOT, "uploads")
+INDEX_DIR = os.path.join(STORAGE_ROOT, "indexes")
+GT_FILES = os.path.join(STORAGE_ROOT, "gt_files")
+RESULT_PATH = os.path.join(STORAGE_ROOT, "results")
+INDEX_PREFIX = "index"
+
+os.makedirs(STORAGE_ROOT, exist_ok=True)
+
+default_build = os.path.join(PROJECT_ROOT, "build", 'script_output')
+
+BUILD_DIR = default_build if os.path.exists(default_build) else None
+build_lock = threading.Lock() 

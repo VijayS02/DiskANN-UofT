@@ -107,6 +107,10 @@ function StatDisplay({res} : {res: ResultInfo}) {
         <TableCell className="text-right">{res.l}</TableCell>
       </TableRow>
       <TableRow>
+        <TableCell className="font-medium">Number of Vectors</TableCell>
+        <TableCell className="text-right">{res.n.toLocaleString()}</TableCell>
+      </TableRow>
+      <TableRow>
         <TableCell className="font-medium">Metrics Tracked</TableCell>
         <TableCell className="text-right">
           <div className="ml-auto justify-end flex divide-x-1 max-w-2/3 flex-wrap">

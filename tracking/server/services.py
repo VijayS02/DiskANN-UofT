@@ -258,6 +258,8 @@ def trace_query(index_path, query_file_name, l=50, k=10, metrics=[]):
     graph = load_graph_from_binary(graph_file)
     index_info = json.load(open(os.path.join(index_path, "index_info.json"))) if os.path.exists(os.path.join(index_path, "index_info.json")) else None
 
+    nodes, _ = get_bin_file_info(query_file)
+
     tracker = initialize_query_tracker(metrics, result_path,index_info=index_info, graph=graph)
     tracking_port = 5555
     command = [
@@ -321,6 +323,7 @@ def trace_query(index_path, query_file_name, l=50, k=10, metrics=[]):
             "query_file": query_file_name,
             "l": l,
             "k": k,
+            "n": nodes,
             "directory": result_path,
             "data": json_data,
             "metrics": metrics,

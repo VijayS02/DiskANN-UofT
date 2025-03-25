@@ -163,6 +163,7 @@ export interface ResultInfo {
     data: any;
     metrics: string[];
     time: number;
+    n: number;
     output_types: {
         [key: string]: string[];
     },
@@ -214,7 +215,7 @@ function ResultView({result}: {result: ResultInfo}){
     </div>
     <div className="grid-cols-2 grid gap-x-1 gap-y-3 mb-4">
       <Stat name="Index Name" value={result.index_name}/>
-      <Stat name="Query File" value={result.query_file}/>
+      <Stat name="Query File" value={`${result.query_file} ${result?.n ? "(" + result?.n?.toLocaleString() + ")" : ""}`}/>
       <Stat name="L (Scratch size)" value={result.l.toString()}/>
       <Stat name="K (Number of neighbors)" value={result.k.toString()}/>
       {/* <Stat name="Directory" value={result.directory}/> */}

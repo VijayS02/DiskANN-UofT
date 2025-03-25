@@ -324,6 +324,8 @@ def trace_query(index_path, query_file_name, l=50, k=10, metrics=[]):
     tracker.generate_graphs(result_path)
 
     json_data = tracker.generate_json()
+
+    tracker.generate_text()
     # Create json file with data about query:
     with open(os.path.join(result_path, "query_info.json"), "w") as f:
         f.write(json.dumps({

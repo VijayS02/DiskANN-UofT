@@ -23,6 +23,7 @@
     "graphology": "^0.26.0",
     "graphology-layout-forceatlas2": "^0.10.1",
     "lucide-react": "^0.483.0",
+    "moment": "^2.30.1",
     "motion": "^12.5.0",
     "next": "15.2.3",
     "react": "^19.0.0",

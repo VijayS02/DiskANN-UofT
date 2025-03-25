@@ -66,7 +66,6 @@ inline void EndQuery(uint32_t i, float query_time)
         {"ground_truth", gt}
     };
     MetricTracker::Track("end_query", jsonData);
-    best_k.clear();
     best_k_counter++;
 }
 
@@ -90,6 +89,8 @@ inline void ConfigureExperimentQuery(size_t queries, uint32_t *gt_ids, float *gt
     ground_truth_ids = gt_ids;
     ground_truth_dim = dim;
     recall_at = recall;
+    best_k.resize(recall_at);
+    best_k.shrink_to_fit();
 
     MetricTracker::Track("configure_experiment", jsonData);
 }
@@ -106,12 +107,9 @@ inline void NodeInfo(uint32_t node, std::vector<float> neighbor_distances)
 
 }
 
-inline void AddBestK(uint32_t id)
+inline void AddBestK(const uint32_t id, const size_t pos)
 {
-    if (best_k_counter < MetricTracker::max_queries_details)
-    {
-        best_k.push_back(id);
-    }
+    best_k[pos] = id;
 }
 
 

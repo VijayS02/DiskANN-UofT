@@ -100,17 +100,21 @@ class AbstractTrackingRunner:
             try:
                 socket.bind(f"tcp://*:{port}")
                 print(f"Listening for metrics on port {port}...")
-
+                messages = []
                 while not self.stop_tracking:
                     try:
                         msg = socket.recv_string()
-                        data = json.loads(msg)
-                        self.handle_metric_event(data)
+                        messages.append(msg)
                     except zmq.Again:
                         # Timeout occurred, just continue
                         pass
                     except json.JSONDecodeError:
                         print("Invalid JSON format received, skipping...")
+                
+                print("Received shutdown signal, processing metrics...")
+                for msg in messages:
+                    data = json.loads(msg)
+                    self.handle_metric_event(data)
 
             except zmq.error.ZMQError as e:
                 print(f"Error in ZMQ server: {e}")
@@ -140,7 +144,7 @@ class AbstractTrackingRunner:
             return_v = trace_function()
 
             # Give time for any final messages to be received
-            time.sleep(1)
+            time.sleep(3)
 
         finally:
             # Stop the tracking server

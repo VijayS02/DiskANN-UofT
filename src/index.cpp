@@ -2006,7 +2006,7 @@ std::pair<uint32_t, uint32_t> Index<T, TagT, LabelT>::search(const T *query, con
     {
         if (best_L_nodes[i].id < _max_points)
         {
-            AddBestK(best_L_nodes[i].id);
+            AddBestK(best_L_nodes[i].id, pos);
             // safe because Index uses uint32_t ids internally
             // and IDType will be uint32_t or uint64_t
             indices[pos] = (IdType)best_L_nodes[i].id;

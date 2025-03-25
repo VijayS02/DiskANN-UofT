@@ -13,10 +13,11 @@ import { Button } from "@/components/ui/button";
 import useFetch from "@/util";
 import { useEffect, useState } from "react";
 import { Index } from "../page";
-import Image from "next/image";
 import Link from "next/link";
 import MultiSelect from "@/components/ui/multiselect";
 import { FileChooser } from "../uploads/page";
+import moment from "moment";
+
 
 export default function Queries() {
   return (
@@ -161,6 +162,7 @@ export interface ResultInfo {
     id: string;
     data: any;
     metrics: string[];
+    time: number;
     output_types: {
         [key: string]: string[];
     },
@@ -184,7 +186,8 @@ function Results(){
     {error && <div className="text-red-500 mt-2">{error}</div>}
     {
       <div className="space-y-3 grid grid-cols-2 gap-2 my-2">
-      {data && data.results.map((index, i) => (
+        
+      {data && data.results.sort((a, b) => b.time - a.time).map((index, i) => (
         <ResultView key={i} result={index}/>
       ))}
       </div>
@@ -202,7 +205,7 @@ function ResultView({result}: {result: ResultInfo}){
 
   return <div className="border-2 border-gray-200 p-3 py-5 rounded-md">
     <div className="flex">
-    <div className="text-lg font-bold">{result.id}</div>
+    <div className="text-lg font-bold">{moment(result.time * 1000).fromNow()}</div>
     <Button size="sm" className="ml-auto" asChild>
       <Link href={`/query/${result.id}`}>
         View 

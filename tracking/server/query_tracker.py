@@ -1,6 +1,6 @@
 from matplotlib.axes import Axes
 
-from lib.abstract_trackers import AbstractQueryTracker, IndividualQueryTracker, JsonMetricTracker
+from lib.abstract_trackers import AbstractQueryTracker, IndividualQueryTracker, JsonMetricTracker, TextMetricTracker
 from lib.basic_metric_types import FrequencyTracker, ChangeOverTimeTracker
 from lib.tracker import QueryTrackerRunner
 import subprocess
@@ -27,7 +27,8 @@ class NodeVisitedDistribution(FrequencyTracker, AbstractQueryTracker):
 class QueryTimeDistribution(FrequencyTracker, AbstractQueryTracker):
     def __init__(self):
         super().__init__("query_time_dist", metrics=["NONE"], bins=30, label="Query Time Distribution")
-        self.edges_visited = 0
+        self.query_times = []
+
     def end_query(self, data):
         self.add_data_point(data['querytime'])
 
@@ -61,6 +62,7 @@ class MinDistanceConvergence(FrequencyTracker, AbstractQueryTracker):
         self.min_dist = 999999999999
         self.index = 0
         self.min_index = -1
+
     def end_query(self, data):
         self.add_data_point(self.min_index / self.index)
         self.min_dist = 9999999999999
@@ -91,7 +93,6 @@ class NodeExplorationIndividual(JsonMetricTracker, IndividualQueryTracker):
         if len(data['best_k']) != 0:
             visit_set = set(self.visit_order)
             self.parents = {node: parent for node, parent in self.parents.items() if node in visit_set}
-
             self.results['best_k'] = data['best_k']
             self.results['parents'] = self.parents
             self.results['gt_results'] = data['ground_truth']
@@ -133,6 +134,28 @@ class DistancePerStepIndiv(ChangeOverTimeTracker, IndividualQueryTracker):
         return {"x": "Step", "y": "Distance", "title": "Distance per step" }
 
 
+class RecallDistribution(FrequencyTracker, TextMetricTracker, AbstractQueryTracker):
+    def __init__(self):
+        super().__init__('recall_dist', metrics=[], bins=20, label="Recall Distribution")
+        self.queries = 0
+        self.recall_vals = []
+    
+    def end_query(self, data):
+        gt_results = data['ground_truth']
+        best_k = data['best_k']
+
+        # compute recall by checking how many of the ground truth results are in the best_k
+        recall = len(set(gt_results).intersection(set(best_k))) / len(gt_results)
+        self.add_data_point(recall)
+        self.queries += 1
+        self.recall_vals.append(recall)
+
+    def print_text_output(self):
+        print(f"Total Queries: {self.queries}, Avg Recall: {sum(self.recall_vals) / self.queries}")
+
+    def get_graph_props(self):
+        return {"x": "Recall", "y": "Frequency", "title": "Recall Distribution", "ylog": True }
+
 METRIC_LIST = [
     NodeVisitedDistribution,
     QueryTimeDistribution,
@@ -140,6 +163,7 @@ METRIC_LIST = [
     MinDistanceConvergence,
     NodeExplorationIndividual,
     DistancePerStepIndiv,
+    RecallDistribution
 ]
 
 

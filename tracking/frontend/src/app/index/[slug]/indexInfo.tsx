@@ -72,8 +72,8 @@ function IndexStatDisplay({res, showMetrics} : {res: Index, showMetrics?: boolea
         <TableCell className="text-right">{`${res.n.toLocaleString()}  ∈  ℝ${toSuperscript(res.dimensions)}`}</TableCell>
       </TableRow>
       <TableRow>
-        <TableCell className="font-medium">Saturated Graph?</TableCell>
-        <TableCell className="text-right">{res.saturate_graph ? "True" : "False"}</TableCell>
+        <TableCell className="font-medium">Edges</TableCell>
+        <TableCell className="text-right">{res.edges.toLocaleString()} <span className="text-sm text-muted-foreground">({(res.edges/(res.r * res.n)*100).toLocaleString()}%)</span></TableCell>
       </TableRow>
       {showMetrics && <TableRow>
         <TableCell className="font-medium">Metrics Tracked</TableCell>

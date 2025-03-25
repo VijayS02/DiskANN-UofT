@@ -155,7 +155,7 @@ class RecallDistribution(FrequencyTracker, TextMetricTracker, AbstractQueryTrack
         self.recall_vals.append(recall)
 
     def print_text_output(self):
-        print(f"Total Queries: {self.queries}, Avg Recall: {sum(self.recall_vals) / self.queries}")
+        print(f"Avg Recall: {(sum(self.recall_vals) / self.queries)*100:.2f}%")
 
     def get_graph_props(self):
         return {"x": "Recall", "y": "Frequency", "title": "Recall Distribution", "ylog": True }
@@ -183,6 +183,14 @@ class UsefulEdgesDistribution(FrequencyTracker,TextMetricTracker, AbstractQueryT
         self.parents.clear()
 
     def end_experiment(self, title):
+        total_used_edges = len(self.edge_uses)
+        unused_edges = 0
+        if self.index_info and "edges" in self.index_info:
+            unused_edges = self.index_info["edges"] - total_used_edges
+        
+        for i in range(unused_edges):
+            self.add_data_point(0)
+
         for edge, uses in self.edge_uses.items():
             if uses < 200:
                 self.add_data_point(uses)
@@ -211,10 +219,10 @@ METRIC_LIST = [
 
 METRICS = {metric().get_id(): {"label": metric().get_label(), "class": metric} for metric in METRIC_LIST}
 
-def initialize_query_tracker(selected_metrics, exp_folder, graph=None):
+def initialize_query_tracker(selected_metrics, exp_folder, **kwargs):
     metric_handlers = [METRICS[metric]['class']() for metric in selected_metrics if metric in METRICS]
 
-    tracker = QueryTrackerRunner(exp_folder, metric_handlers=metric_handlers, graph=graph)
+    tracker = QueryTrackerRunner(exp_folder, metric_handlers=metric_handlers, **kwargs)
     return tracker
 
 

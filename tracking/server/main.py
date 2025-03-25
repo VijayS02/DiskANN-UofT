@@ -15,7 +15,7 @@ import hashlib
 from datetime import datetime
 import matplotlib
 
-from lib.read_utils import get_bin_file_info, load_graph_from_binary
+from lib.read_utils import get_bin_file_info, load_graph_from_binary, count_edges_from_binary
 matplotlib.use('Agg')
 
 
@@ -239,6 +239,7 @@ def construct_graph(index_name, base_file_name, r=32, l_build=50, alpha=1.2, sat
             "alpha": alpha,
             "n": nodes,
             "dimensions": ndims,
+            "edges": count_edges_from_binary(os.path.join(index_path, INDEX_PREFIX + "_graph.bin")),
             "saturate_graph": saturate_graph,
             "metrics": metrics,
             "output_types": tracker.generate_output_dict()
@@ -279,8 +280,9 @@ def trace_query(index_path, query_file_name, l=50, k=10, metrics=[]):
 
     graph_file = os.path.join(index_path, INDEX_PREFIX + "_graph.bin")
     graph = load_graph_from_binary(graph_file)
+    index_info = json.load(open(os.path.join(index_path, "index_info.json"))) if os.path.exists(os.path.join(index_path, "index_info.json")) else None
 
-    tracker = initialize_query_tracker(metrics, result_path, graph=graph)
+    tracker = initialize_query_tracker(metrics, result_path,index_info=index_info, graph=graph)
     tracking_port = 5555
     command = [
         search_memory_index,

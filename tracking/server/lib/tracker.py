@@ -195,7 +195,7 @@ class ConstructionTrackingRunner(AbstractTrackingRunner):
                     tracker.handle_metric_event(metric_name, data['value'])
 
 class QueryTrackerRunner(AbstractTrackingRunner):
-    def __init__(self, exp_folder, graph=None, individualQDataCount=10, port=5556, metric_handlers: List[AbstractQueryTracker]=None):
+    def __init__(self, exp_folder, index_info=None, graph=None, individualQDataCount=10, port=5556, metric_handlers: List[AbstractQueryTracker]=None):
         self.experiment_stats = dict()
         self.completed_queries = 0
         self.individualQDataCount = individualQDataCount
@@ -204,6 +204,7 @@ class QueryTrackerRunner(AbstractTrackingRunner):
 
         for (tracker, _) in self.iterate_unique_trackers():
             tracker.set_graph(graph)
+            tracker.set_index_info(index_info)
 
     def handle_metric_event(self, data):
         metric_name = data["metric_name"]

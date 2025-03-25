@@ -78,9 +78,13 @@ class AbstractQueryTracker(AbstractMetricTracker):
         super().__init__(*args, **kwargs)
         self.experiment_info = dict()
         self.graph = None
+        self.index_info = None
 
     def set_graph(self, graph):
         self.graph = graph
+
+    def set_index_info(self, index_info):
+        self.index_info = index_info
 
     def configure_experiment_stats(self, data):
         self.experiment_info = data

@@ -160,6 +160,7 @@ export interface Index {
   metrics: string[];
   n: number;
   dimensions: number;
+  edges: number;
   output_types: {
     [key: string]: string[];
   }
@@ -210,8 +211,8 @@ function AvailableIndexes(){
                   <div className="text-lg mx-1">{`${index.n.toLocaleString()}  ∈  ℝ${toSuperscript(index.dimensions)}`}</div>
               </div>
               <div>
-                  <div className="text-muted-foreground mb-1 mx-1">Saturate Edge Budget?</div>
-                  <div className="text-lg mx-1">{index.saturate_graph ? "Yes" : "No"}</div>
+                  <div className="text-muted-foreground mb-1 mx-1">Edges</div>
+                  <div className="text-lg mx-1">{index.edges.toLocaleString()} ({(index.edges/(index.r * index.n)*100).toLocaleString()}%)</div>
               </div>
           </div>
         </div>

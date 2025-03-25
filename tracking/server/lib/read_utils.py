@@ -15,6 +15,27 @@ def load_graph_from_binary(filename):
     print(len(graph))
     return graph
 
+def count_edges_from_binary(filename):
+    """
+    Reads a binary graph file and counts the number of edges efficiently.
+    
+    Args:
+        filename (str): Path to the binary file.
+    
+    Returns:
+        int: Total number of edges.
+    """
+    total_edges = 0
+    with open(filename, "rb") as f:
+        num_nodes = struct.unpack("I", f.read(4))[0]  # Read number of nodes
+
+        for _ in range(num_nodes):
+            degree = struct.unpack("I", f.read(4))[0]  # Read degree
+            total_edges += degree  # Count edges
+            f.read(4 * degree)  # Skip neighbors in the file
+
+    return total_edges
+
 def get_bin_file_info(filename):
     """
     Reads a binary file and returns the number of nodes (points) and their dimensions.

@@ -9,6 +9,7 @@ import zmq
 import json
 from lib.abstract_trackers import AbstractConstructionTracker, AbstractMetricTracker, AbstractQueryTracker, GraphMetricTracker, IndividualQueryTracker, JsonMetricTracker, TextMetricTracker
 import threading
+from tqdm import tqdm 
 
 import matplotlib.pyplot as plt
 
@@ -113,7 +114,8 @@ class AbstractTrackingRunner:
                         print("Invalid JSON format received, skipping...")
                 
                 print("Received shutdown signal, processing metrics...")
-                while not self.message_queue.empty():
+                msg_q_len = self.message_queue.qsize()
+                for _ in tqdm(range(msg_q_len)):
                     data = json.loads(self.message_queue.get())
                     self.handle_metric_event(data)
 

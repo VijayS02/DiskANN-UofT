@@ -166,6 +166,7 @@ class UsefulEdgesDistribution(FrequencyTracker,TextMetricTracker, AbstractQueryT
         super().__init__("UsefulEdgesDistribution", bins=30, metrics=["visited_node"], label="Useful Edges Distribution")
         self.parents = dict()
         self.edge_uses = defaultdict(int)
+        self.unused_edges = 0
 
     def handle_metric_event(self, metric_name, metric_data):
         if not self.graph:
@@ -184,11 +185,11 @@ class UsefulEdgesDistribution(FrequencyTracker,TextMetricTracker, AbstractQueryT
 
     def end_experiment(self, title):
         total_used_edges = len(self.edge_uses)
-        unused_edges = 0
+        self.unused_edges = 0
         if self.index_info and "edges" in self.index_info:
-            unused_edges = self.index_info["edges"] - total_used_edges
+            self.unused_edges = self.index_info["edges"] - total_used_edges
         
-        for i in range(unused_edges):
+        for i in range(self.unused_edges):
             self.add_data_point(0)
 
         for edge, uses in self.edge_uses.items():
@@ -200,6 +201,9 @@ class UsefulEdgesDistribution(FrequencyTracker,TextMetricTracker, AbstractQueryT
         print("Top 10 edges by use:")
         for edge, uses in sorted(self.edge_uses.items(), key=lambda x: x[1], reverse=True)[:10]:
             print(f"{edge}: {uses}")
+        
+        print(f"Number of unused edges: {self.unused_edges}")
+
     
     def get_graph_props(self):
         return {"x": "Edge Uses", "y": "Frequency", "title": "Edge Use Distribution", "ylog": True }

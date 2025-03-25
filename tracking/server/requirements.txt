@@ -5,3 +5,4 @@ pandas
 flask
 python-dotenv
 flask_socketio
+tqdm

@@ -147,7 +147,7 @@ int search_memory_index(diskann::Metric &metric, const std::string &index_path, 
 
     double best_recall = 0.0;
 
-    ConfigureExperimentQuery(query_num);
+    ConfigureExperimentQuery(query_num, gt_ids, gt_dists, (uint32_t)gt_dim, recall_at);
 
     for (uint32_t test_id = 0; test_id < Lvec.size(); test_id++)
     {
@@ -212,7 +212,7 @@ int search_memory_index(diskann::Metric &metric, const std::string &index_path, 
             auto qe = std::chrono::high_resolution_clock::now();
             std::chrono::duration<double> diff = qe - qs;
             latency_stats[i] = (float)(diff.count() * 1000000);
-            EndQuery(latency_stats[i]);
+            EndQuery(i, latency_stats[i]);
         }
         std::chrono::duration<double> diff = std::chrono::high_resolution_clock::now() - s;
 

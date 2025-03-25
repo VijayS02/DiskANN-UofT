@@ -82,26 +82,31 @@ class MinDistanceConvergence(FrequencyTracker, AbstractQueryTracker):
 
 class NodeExplorationIndividual(JsonMetricTracker, IndividualQueryTracker):
     def __init__(self):
-        super().__init__("IndividualQueryNodeExploration", "indiv_node_explore_graph", metrics=["node_connection", "visited_node"], label="Node exploration (Individual)")
+        super().__init__("IndividualQueryNodeExploration", "indiv_node_explore_graph", metrics=["visited_node"], label="Node exploration (Individual)")
         self.parents = dict()
         self.results = dict()
         self.visit_order = []
 
     def end_query(self, data):
         if len(data['best_k']) != 0:
+            visit_set = set(self.visit_order)
+            self.parents = {node: parent for node, parent in self.parents.items() if node in visit_set}
+
             self.results['best_k'] = data['best_k']
             self.results['parents'] = self.parents
+            self.results['gt_results'] = data['ground_truth']
             self.results['visit_order'] = self.visit_order
             self.parents = dict()
             self.visit_order = []
 
 
     def handle_metric_event(self, metric_name, metric_data):
-        if metric_name == "node_connection":
-            if metric_data['child'] not in self.parents:
-                self.parents[metric_data['child']] = metric_data['parent']
-        elif metric_name == "visited_node":
-            self.visit_order.append(metric_data['nodeid'])
+        if not self.graph:
+            raise ValueError("Graph not set")
+        self.visit_order.append(metric_data['nodeid'])
+        for child in self.graph[metric_data['nodeid']]:
+            if child not in self.parents:
+                self.parents[child] = metric_data['nodeid']
 
     def end_experiment(self, title):
         pass
@@ -134,16 +139,16 @@ METRIC_LIST = [
     AverageDistancePerStep,
     MinDistanceConvergence,
     NodeExplorationIndividual,
-    DistancePerStepIndiv
+    DistancePerStepIndiv,
 ]
 
 
 METRICS = {metric().get_id(): {"label": metric().get_label(), "class": metric} for metric in METRIC_LIST}
 
-def initialize_query_tracker(selected_metrics, exp_folder):
+def initialize_query_tracker(selected_metrics, exp_folder, graph=None):
     metric_handlers = [METRICS[metric]['class']() for metric in selected_metrics if metric in METRICS]
 
-    tracker = QueryTrackerRunner(exp_folder, metric_handlers=metric_handlers)
+    tracker = QueryTrackerRunner(exp_folder, metric_handlers=metric_handlers, graph=graph)
     return tracker
 
 

@@ -48,6 +48,35 @@ void saveGraphToFile(const std::vector<std::vector<uint32_t>> &graph, const std:
     std::cout << "Graph saved to " << filename << std::endl;
 }
 
+void saveGraphToBinaryFile(const std::vector<std::vector<uint32_t>> &graph, const std::string &filename)
+{
+    std::ofstream file(filename, std::ios::binary);
+    if (!file)
+    {
+        std::cerr << "Error: Unable to open file " << filename << std::endl;
+        return;
+    }
+
+    // Write the number of nodes
+    uint32_t numNodes = static_cast<uint32_t>(graph.size());
+    file.write(reinterpret_cast<const char *>(&numNodes), sizeof(numNodes));
+
+    // Write adjacency list for each node
+    for (const auto &neighbors : graph)
+    {
+        uint32_t degree = static_cast<uint32_t>(neighbors.size());
+        file.write(reinterpret_cast<const char *>(&degree), sizeof(degree));
+
+        for (const uint32_t neighbor : neighbors)
+        {
+            file.write(reinterpret_cast<const char *>(&neighbor), sizeof(neighbor));
+        }
+    }
+
+    file.close();
+    std::cout << "Graph saved to " << filename << " in binary format." << std::endl;
+}
+
 int main(int argc, char **argv)
 {
     std::string data_type, dist_fn, data_path, index_path_prefix, label_file, universal_label, label_type, connection_str;
@@ -205,7 +234,8 @@ int main(int argc, char **argv)
                 throw std::runtime_error("Error: _graph_store is not an InMemGraphStore instance.");
             }
             auto graph = graphStore->get_graph();
-            saveGraphToFile(graph, index_path_prefix + ".txt");
+            // saveGraphToFile(graph, index_path_prefix + ".txt");
+            saveGraphToBinaryFile(graph, index_path_prefix + "_graph.bin");
         }
         index.reset();
         EndConstruction();

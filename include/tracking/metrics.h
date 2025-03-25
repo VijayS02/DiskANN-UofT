@@ -8,6 +8,11 @@
 
 inline std::vector<uint32_t> best_k = {};
 inline int best_k_counter = 0;
+inline uint32_t *ground_truth_ids = nullptr;
+inline float *ground_truth_dists = nullptr;
+inline uint32_t ground_truth_dim = 0;
+inline uint32_t recall_at = 0;
+
 
 inline void TestTrack(int number)
 {
@@ -41,15 +46,24 @@ inline void AddConstructionPathLength(uint32_t number)
     MetricTracker::Track("add_construction_path_length", number);
 }
 
-inline void EndQuery(float query_time)
+inline void EndQuery(uint32_t i, float query_time)
 {
-    if (best_k_counter < MetricTracker::max_queries_details)
+    uint32_t *gt_vec = ground_truth_ids + ground_truth_dim * i;
+    size_t tie_breaker = recall_at;
+    if (ground_truth_dists != nullptr)
     {
-        query_time = 0;
+        tie_breaker = recall_at - 1;
+        float *gt_dist_vec = ground_truth_dists + ground_truth_dim * i;
+        while (tie_breaker < ground_truth_dim && gt_dist_vec[tie_breaker] == gt_dist_vec[recall_at - 1])
+            tie_breaker++;
     }
+
+    std::set<uint32_t> gt(gt_vec, gt_vec + tie_breaker);
+
     const nlohmann::json jsonData = {
         {"querytime", query_time},
-        {"best_k", best_k}
+        {"best_k", best_k},
+        {"ground_truth", gt}
     };
     MetricTracker::Track("end_query", jsonData);
     best_k.clear();
@@ -66,11 +80,16 @@ inline void VisitedNode(uint32_t nodeId, float distance)
     MetricTracker::Track("visited_node", jsonData);
 }
 
-inline void ConfigureExperimentQuery(size_t queries)
+inline void ConfigureExperimentQuery(size_t queries, uint32_t *gt_ids, float *gt_dists, uint32_t dim, uint32_t recall)
 {
     const nlohmann::json jsonData = {
         {"queries", queries}
     };
+
+    ground_truth_dists = gt_dists;
+    ground_truth_ids = gt_ids;
+    ground_truth_dim = dim;
+    recall_at = recall;
 
     MetricTracker::Track("configure_experiment", jsonData);
 }
@@ -84,20 +103,6 @@ inline void NodeInfo(uint32_t node, std::vector<float> neighbor_distances)
         };
 
     MetricTracker::Track("node_info", jsonData);
-
-}
-
-inline void NodeConnection(uint32_t parent, uint32_t child)
-{
-    if (best_k_counter < MetricTracker::max_queries_details)
-    {
-        const nlohmann::json jsonData = {
-            {"parent", parent},
-            {"child", child},
-        };
-
-        MetricTracker::Track("node_connection", jsonData);
-    }
 
 }
 

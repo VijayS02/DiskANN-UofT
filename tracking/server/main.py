@@ -14,6 +14,8 @@ import time
 import hashlib
 from datetime import datetime
 import matplotlib
+
+from lib.read_graph import load_graph_from_binary
 matplotlib.use('Agg')
 
 
@@ -189,7 +191,8 @@ def construct_graph(index_name, base_file_name, r=32, l_build=50, alpha=1.2, sat
             "--alpha", str(alpha),
             "--num_threads", "1",
             "--tracking_addr", f"tcp://localhost:{tracking_port}",
-            "--saturate_graph" if saturate_graph else ""
+            "--saturate_graph" if saturate_graph else "",
+            "--output_graph"
         ]
     
     print(command)
@@ -265,8 +268,10 @@ def trace_query(index_path, query_file_name, l=50, k=10, metrics=[]):
     search_memory_index = os.path.join(BUILD_DIR, "apps", "search_memory_index")
     # Send results to /dev/null to avoid cluttering the output
 
+    graph_file = os.path.join(index_path, INDEX_PREFIX + "_graph.bin")
+    graph = load_graph_from_binary(graph_file)
 
-    tracker = initialize_query_tracker(metrics, result_path)
+    tracker = initialize_query_tracker(metrics, result_path, graph=graph)
     tracking_port = 5555
     command = [
         search_memory_index,
@@ -280,7 +285,7 @@ def trace_query(index_path, query_file_name, l=50, k=10, metrics=[]):
         "--result_path", RESULT_PATH,
         "--num_threads", "1",
         "--tracking_addr", f"tcp://localhost:{tracking_port}", 
-        "--collect_queries_data", "100"
+        "--collect_queries_data", "100",
     ]
     
     def exec_func():

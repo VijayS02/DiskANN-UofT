@@ -77,6 +77,10 @@ class AbstractQueryTracker(AbstractMetricTracker):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.experiment_info = dict()
+        self.graph = None
+
+    def set_graph(self, graph):
+        self.graph = graph
 
     def configure_experiment_stats(self, data):
         self.experiment_info = data

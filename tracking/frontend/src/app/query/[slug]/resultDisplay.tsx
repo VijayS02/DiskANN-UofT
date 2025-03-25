@@ -24,6 +24,7 @@ import {
     AccordionTrigger,
   } from "@/components/ui/accordion"
 import { Button } from "@/components/ui/button";
+import moment from "moment";
 
 
 export default function ResultDisplay({id} : {id: string}) {
@@ -85,6 +86,10 @@ function StatDisplay({res} : {res: ResultInfo}) {
       </TableRow>
     </TableHeader>
     <TableBody>
+    <TableRow>
+        <TableCell className="font-medium">Time</TableCell>
+        <TableCell className="text-right">{moment(res.time * 1000).format("dddd, MMMM Do YYYY, h:mm:ss A")}</TableCell>
+      </TableRow>
       <TableRow>
         <TableCell className="font-medium">Index Name</TableCell>
         <TableCell className="text-right">{res.index_name}</TableCell>

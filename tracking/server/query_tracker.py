@@ -1,3 +1,4 @@
+from collections import defaultdict
 from matplotlib.axes import Axes
 
 from lib.abstract_trackers import AbstractQueryTracker, IndividualQueryTracker, JsonMetricTracker, TextMetricTracker
@@ -147,6 +148,9 @@ class RecallDistribution(FrequencyTracker, TextMetricTracker, AbstractQueryTrack
         # compute recall by checking how many of the ground truth results are in the best_k
         recall = len(set(gt_results).intersection(set(best_k))) / len(gt_results)
         self.add_data_point(recall)
+        if recall == 0:
+            print(f"Recall is 0 for query {self.queries}")
+
         self.queries += 1
         self.recall_vals.append(recall)
 
@@ -155,6 +159,42 @@ class RecallDistribution(FrequencyTracker, TextMetricTracker, AbstractQueryTrack
 
     def get_graph_props(self):
         return {"x": "Recall", "y": "Frequency", "title": "Recall Distribution", "ylog": True }
+    
+
+class UsefulEdgesDistribution(FrequencyTracker,TextMetricTracker, AbstractQueryTracker):
+    def __init__(self):
+        super().__init__("UsefulEdgesDistribution", bins=30, metrics=["visited_node"], label="Useful Edges Distribution")
+        self.parents = dict()
+        self.edge_uses = defaultdict(int)
+
+    def handle_metric_event(self, metric_name, metric_data):
+        if not self.graph:
+            raise ValueError("Graph not set")
+
+        for child in self.graph[metric_data['nodeid']]:
+            if child not in self.parents:
+                self.parents[child] = metric_data['nodeid']
+        
+        if metric_data['nodeid'] in self.parents:
+            edge = (self.parents[metric_data['nodeid']], metric_data['nodeid'])
+            self.edge_uses[edge] += 1
+
+    def end_query(self, data):
+        self.parents.clear()
+
+    def end_experiment(self, title):
+        for edge, uses in self.edge_uses.items():
+            self.add_data_point(uses)
+        self.end_experiment_graph(title)
+
+    def print_text_output(self):
+        print("Top 10 edges by use:")
+        for edge, uses in sorted(self.edge_uses.items(), key=lambda x: x[1], reverse=True)[:10]:
+            print(f"{edge}: {uses}")
+    
+    def get_graph_props(self):
+        return {"x": "Edge Uses", "y": "Frequency", "title": "Edge Use Distribution", "ylog": True }
+
 
 METRIC_LIST = [
     NodeVisitedDistribution,
@@ -163,7 +203,8 @@ METRIC_LIST = [
     MinDistanceConvergence,
     NodeExplorationIndividual,
     DistancePerStepIndiv,
-    RecallDistribution
+    RecallDistribution,
+    UsefulEdgesDistribution
 ]
 
 

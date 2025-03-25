@@ -193,8 +193,7 @@ class UsefulEdgesDistribution(FrequencyTracker,TextMetricTracker, AbstractQueryT
             self.add_data_point(0)
 
         for edge, uses in self.edge_uses.items():
-            if uses < 200:
-                self.add_data_point(uses)
+            self.add_data_point(uses)
         self.end_experiment_graph(title)
 
     def print_text_output(self):
@@ -208,6 +207,67 @@ class UsefulEdgesDistribution(FrequencyTracker,TextMetricTracker, AbstractQueryT
     def get_graph_props(self):
         return {"x": "Edge Uses", "y": "Frequency", "title": "Edge Use Distribution", "ylog": True }
 
+class KUsefulEdges(FrequencyTracker,TextMetricTracker, AbstractQueryTracker):
+    def __init__(self):
+        super().__init__("KUsefulEdges", bins=30, metrics=["visited_node"], label="K-Useful Edges Distribution")
+        self.parents = dict()
+        self.edge_uses = defaultdict(int)
+        self.unused_edges = 0
+
+    def handle_metric_event(self, metric_name, metric_data):
+        if not self.graph:
+            raise ValueError("Graph not set")
+
+        for child in self.graph[metric_data['nodeid']]:
+            if child not in self.parents:
+                self.parents[child] = metric_data['nodeid']
+
+    def trace_path(self, node):
+        current = node
+        visited = set()
+
+        while current in self.parents:
+            if current in visited:  # Cycle detected!
+                break
+
+            visited.add(current)
+            parent = self.parents[current]
+            edge = (parent, current)
+            self.edge_uses[edge] += 1  # Track edge usage count
+            current = parent  # Move up the path
+
+    def end_query(self, data):
+        best_k = data['best_k']
+        for node in best_k:
+            self.trace_path(node)
+        self.parents.clear()
+
+    def end_experiment(self, title):
+        total_used_edges = len(self.edge_uses)
+        self.unused_edges = 0
+        if self.index_info and "edges" in self.index_info:
+            self.unused_edges = self.index_info["edges"] - total_used_edges
+        
+        for i in range(self.unused_edges):
+            self.add_data_point(0)
+
+        for edge, uses in self.edge_uses.items():
+            self.add_data_point(uses)
+        self.end_experiment_graph(title)
+
+    def print_text_output(self):
+        print("Top 10 USEFUL edges by use:")
+        for edge, uses in sorted(self.edge_uses.items(), key=lambda x: x[1], reverse=True)[:10]:
+            print(f"{edge}: {uses}")
+        
+        print(f"Number of non-useful edges: {self.unused_edges}")
+
+    
+    def get_graph_props(self):
+        return {"x": "Useful Edge Uses", "y": "Frequency", "title": "K-Useful Edge Use Distribution", "ylog": True }
+
+
+
 
 METRIC_LIST = [
     NodeVisitedDistribution,
@@ -217,7 +277,8 @@ METRIC_LIST = [
     NodeExplorationIndividual,
     DistancePerStepIndiv,
     RecallDistribution,
-    UsefulEdgesDistribution
+    UsefulEdgesDistribution,
+    KUsefulEdges
 ]
 
 

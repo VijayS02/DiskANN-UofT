@@ -97,6 +97,20 @@ class AbstractQueryTracker(AbstractMetricTracker):
         """
         pass
 
+
+class JsonGraphMetricTracker(AbstractMetricTracker):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    @abstractmethod
+    def get_graph_json(self):
+        pass
+
+    @abstractmethod
+    def get_json_graph_props(self):
+        pass
+
+
 class IndividualQueryTracker(AbstractQueryTracker):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

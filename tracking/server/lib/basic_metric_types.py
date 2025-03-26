@@ -3,7 +3,7 @@ from typing import List
 
 import numpy as np
 
-from lib.abstract_trackers import GraphMetricTracker
+from lib.abstract_trackers import GraphMetricTracker, JsonGraphMetricTracker
 
 
 def set_graph_props(ax, graph_props):
@@ -22,7 +22,7 @@ def set_graph_props(ax, graph_props):
 
 
 
-class FrequencyTracker(GraphMetricTracker, ABC):
+class FrequencyTracker(GraphMetricTracker, JsonGraphMetricTracker, ABC):
     """
     Tracks the frequency distribution of a metric over multiple experiments.
 
@@ -84,8 +84,17 @@ class FrequencyTracker(GraphMetricTracker, ABC):
         self.counts = []
         self.experiments = dict()
 
+    def get_graph_json(self):
+        return self.experiments
+    
+    def get_json_graph_props(self):
+        return {
+            "type": "hist",
+            "props" : self.get_graph_props()
+        }
 
-class ChangeOverTimeTracker(GraphMetricTracker, ABC):
+
+class ChangeOverTimeTracker(GraphMetricTracker, JsonGraphMetricTracker,  ABC):
     """
     Tracks how a metric changes over time across multiple experiments.
 
@@ -159,3 +168,12 @@ class ChangeOverTimeTracker(GraphMetricTracker, ABC):
         self.time_series = []
         self.experiments = dict()
         self.counts = []
+
+    def get_graph_json(self):
+        return self.experiments
+    
+    def get_json_graph_props(self):
+        return {
+            "type": "line",
+            "props" : self.get_graph_props()
+        }

@@ -25,10 +25,14 @@ import {
   } from "@/components/ui/accordion"
 import { Button } from "@/components/ui/button";
 import moment from "moment";
+import MsgPackGraphRenderer from "@/components/msgpackRender";
 
 
 export default function ResultDisplay({id} : {id: string}) {
         const { data, loading, error } = useFetch< ResultInfo>(`/query_json/${id}`);
+
+        const { data: graphMsgPack } = useFetch<Record<string, unknown>>(`/query_msgpack_graphs/${id}`);
+
         console.log(data)
         return (
         <div>
@@ -38,6 +42,7 @@ export default function ResultDisplay({id} : {id: string}) {
             {data && <div>
                 <div className="grid grid-cols-2 gap-4">
                     <StatDisplay res={data}/>
+                   {  graphMsgPack &&  <div className="col-span-full"><MsgPackGraphRenderer  data={graphMsgPack} graphIds={data.output_types['json_graph']}/></div>}
                     <ImageDisplay full_col url_base={`/api/query_image/${id}`} image_metrics={data.output_types['graph']}/>
                     <IndividualDisplay id={id} query_info={data}/>
                 </div>

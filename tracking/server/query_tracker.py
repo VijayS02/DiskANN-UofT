@@ -188,9 +188,6 @@ class UsefulEdgesDistribution(FrequencyTracker,TextMetricTracker, AbstractQueryT
         self.unused_edges = 0
         if self.index_info and "edges" in self.index_info:
             self.unused_edges = self.index_info["edges"] - total_used_edges
-        
-        for i in range(self.unused_edges):
-            self.add_data_point(0)
 
         for edge, uses in self.edge_uses.items():
             self.add_data_point(uses)
@@ -222,7 +219,7 @@ class KUsefulEdges(FrequencyTracker,TextMetricTracker, AbstractQueryTracker):
             if child not in self.parents:
                 self.parents[child] = metric_data['nodeid']
 
-    def trace_path(self, node):
+    def trace_path(self, node, edges_used=set()):
         current = node
         visited = set()
 
@@ -233,13 +230,16 @@ class KUsefulEdges(FrequencyTracker,TextMetricTracker, AbstractQueryTracker):
             visited.add(current)
             parent = self.parents[current]
             edge = (parent, current)
-            self.edge_uses[edge] += 1  # Track edge usage count
+            if edge not in edges_used:
+                edges_used.add(edge)
+                self.edge_uses[edge] += 1  # Track edge usage count
             current = parent  # Move up the path
 
     def end_query(self, data):
         best_k = data['best_k']
+        edges_used = set()
         for node in best_k:
-            self.trace_path(node)
+            self.trace_path(node, edges_used=edges_used)
         self.parents.clear()
 
     def end_experiment(self, title):
@@ -247,12 +247,10 @@ class KUsefulEdges(FrequencyTracker,TextMetricTracker, AbstractQueryTracker):
         self.unused_edges = 0
         if self.index_info and "edges" in self.index_info:
             self.unused_edges = self.index_info["edges"] - total_used_edges
-        
-        for i in range(self.unused_edges):
-            self.add_data_point(0)
 
         for edge, uses in self.edge_uses.items():
-            self.add_data_point(uses)
+            if uses < 50:
+                self.add_data_point(uses)
         self.end_experiment_graph(title)
 
     def print_text_output(self):

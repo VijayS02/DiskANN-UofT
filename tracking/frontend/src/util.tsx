@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+const msgpack = require("msgpack-lite");
 
 type FetchMethod = "GET" | "POST";
 
@@ -57,7 +58,15 @@ const useFetch = <T,>(
                 if (!response.ok) {
                     throw new Error(`${response.status}`);
                 }
-                const result: T = await response.json();
+                const contentType = response.headers.get("Content-Type");
+                let result: T;
+
+                if (contentType && contentType.includes("application/msgpack")) {
+                    const arrayBuffer = await response.arrayBuffer(); // Get binary data
+                    result = msgpack.decode(new Uint8Array(arrayBuffer)) as T; // Decode MessagePack
+                } else {
+                    result = await response.json(); // Fallback to JSON if not MessagePack
+                }
                 setData(result);
             } catch (err) {
                 setError((err as Error).message);

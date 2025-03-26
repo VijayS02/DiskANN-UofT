@@ -7,12 +7,32 @@ from typing import List, Dict
 import numpy as np
 import zmq
 import json
-from lib.abstract_trackers import AbstractConstructionTracker, AbstractMetricTracker, AbstractQueryTracker, GraphMetricTracker, IndividualQueryTracker, JsonMetricTracker, TextMetricTracker
+from lib.abstract_trackers import AbstractConstructionTracker, AbstractMetricTracker, AbstractQueryTracker, GraphMetricTracker, IndividualQueryTracker, JsonGraphMetricTracker, JsonMetricTracker, TextMetricTracker
 import threading
 from tqdm import tqdm 
+import msgpack
+
 
 import matplotlib.pyplot as plt
 
+def convert_numpy_to_python(obj):
+    """Recursively convert NumPy objects to Python native types."""
+    if isinstance(obj, np.ndarray):
+        return obj.tolist()  # Convert NumPy array to list
+    elif isinstance(obj, np.integer):
+        return int(obj)  # Convert NumPy int to Python int
+    elif isinstance(obj, np.floating):
+        return float(obj)  # Convert NumPy float to Python float
+    elif isinstance(obj, np.bool_):
+        return bool(obj)  # Convert NumPy bool to Python bool
+    elif isinstance(obj, dict):
+        return {k: convert_numpy_to_python(v) for k, v in obj.items()}  # Recursively process dict
+    elif isinstance(obj, list):
+        return [convert_numpy_to_python(v) for v in obj]  # Recursively process list
+    elif isinstance(obj, tuple):
+        return tuple(convert_numpy_to_python(v) for v in obj)  # Recursively process tuple
+    return obj  # Return the object if it doesn't need conversion
+    
 
 class AbstractTrackingRunner:
 
@@ -85,6 +105,26 @@ class AbstractTrackingRunner:
 
             plt.tight_layout()
             plt.show()  # Display graph
+
+    def generate_json_graphs(self, filename, single_query=False):
+        json_trackers = [tracker for tracker, _ in self.iterate_unique_trackers() if isinstance(tracker, JsonGraphMetricTracker) and (single_query == isinstance(tracker, IndividualQueryTracker))]
+
+        data = {}
+        for tracker in json_trackers:
+            data[tracker.get_id()] = {
+                "data": tracker.get_graph_json(),
+                "metadata": tracker.get_json_graph_props()
+            }
+        
+        # Recursively convert all NumPy data before writing
+        data_serializable = convert_numpy_to_python(data)
+
+        # Write using MessagePack
+        with open(filename, "wb") as f:  # Use "wb" since msgpack writes binary data
+            f.write(msgpack.packb(data_serializable))
+
+        print(f"JSON graph data written to {filename}")
+
 
     def end_experiment(self, title):
         for (tracker, metrics) in self.iterate_unique_trackers():
@@ -172,13 +212,14 @@ class AbstractTrackingRunner:
         return data
     
     def generate_output_dict(self, single_query=False):
-        json_trackers = [tracker.get_id() for tracker, _ in self.iterate_unique_trackers() if isinstance(tracker, JsonMetricTracker) and (single_query == isinstance(tracker, IndividualQueryTracker))]
-        text_trackers = [tracker.get_id() for tracker, _ in self.iterate_unique_trackers() if isinstance(tracker, TextMetricTracker) and (single_query == isinstance(tracker, IndividualQueryTracker))]
-        graph_trackers = [tracker.get_id() for tracker, _ in self.iterate_unique_trackers() if isinstance(tracker, GraphMetricTracker) and (single_query == isinstance(tracker, IndividualQueryTracker))]
+        def get_type(InstanceType):
+            return [tracker.get_id() for tracker, _ in self.iterate_unique_trackers() if isinstance(tracker, InstanceType) and (single_query == isinstance(tracker, IndividualQueryTracker))]
+        
         return {
-            "json": json_trackers,
-            "text": text_trackers,
-            "graph": graph_trackers
+            "json": get_type(JsonMetricTracker),
+            "text": get_type(TextMetricTracker),
+            "graph": get_type(GraphMetricTracker),
+            "json_graph": get_type(JsonGraphMetricTracker)
         }
 
 class ConstructionTrackingRunner(AbstractTrackingRunner):

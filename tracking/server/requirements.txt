@@ -6,3 +6,4 @@ flask
 python-dotenv
 flask_socketio
 tqdm
+msgpack

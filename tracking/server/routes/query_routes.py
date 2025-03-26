@@ -70,6 +70,15 @@ def get_json(id):
     
     return jsonify(json.load(open(json_path)))
 
+@query_bp.route("/query_msgpack_graphs/<path:id>")
+def get_msg_pack_query(id):
+    json_path = os.path.join(RESULT_PATH, id, "graphs.msgpack")
+    
+    if not os.path.exists(json_path):
+        return 404
+    
+    return send_file(json_path, mimetype="application/msgpack", as_attachment=False)
+
 @query_bp.route("/indv_query_json/<path:id>/<path:query_id>")
 def get_query_ind_json(id, query_id):
     json_path = os.path.join(RESULT_PATH, id, f"query_{query_id}", f"metrics.json")

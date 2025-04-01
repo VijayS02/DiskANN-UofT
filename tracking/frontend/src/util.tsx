@@ -37,7 +37,7 @@ const useFetch = <T,>(
 
     const fetchData = useCallback(
         async (newPostData?: unknown) => {
-            setLoading(true);
+            if (data === null) setLoading(true);
             setError(null);
 
             try {

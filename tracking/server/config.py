@@ -6,6 +6,12 @@ from flask_socketio import SocketIO
 SOCKETIO = SocketIO(cors_allowed_origins="*")
 load_dotenv()
 
+# Check if the environment variables are set
+if not os.getenv("DISK_ANN_ROOT"):
+    raise ValueError("DISK_ANN_ROOT is not set")
+
+if not os.getenv("STORAGE_ROOT"):
+    raise ValueError("STORAGE_ROOT is not set")
 
 PROJECT_ROOT = os.getenv("DISK_ANN_ROOT")
 STORAGE_ROOT = os.getenv("STORAGE_ROOT")

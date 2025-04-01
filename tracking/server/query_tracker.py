@@ -249,8 +249,7 @@ class KUsefulEdges(FrequencyTracker,TextMetricTracker, AbstractQueryTracker):
             self.unused_edges = self.index_info["edges"] - total_used_edges
 
         for edge, uses in self.edge_uses.items():
-            if uses < 50:
-                self.add_data_point(uses)
+            self.add_data_point(uses)
         self.end_experiment_graph(title)
 
     def print_text_output(self):

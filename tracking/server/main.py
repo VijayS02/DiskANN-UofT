@@ -36,9 +36,12 @@ def run_build():
 @app.route("/status")
 def status():
     stats = {
-        "cpu_percent": psutil.cpu_percent(interval=0.5),
-        "memory": psutil.virtual_memory()._asdict(),
-    }
+                "device_stats": 
+                {
+                    "cpu_percent": psutil.cpu_percent(interval=0.5),
+                    "memory": psutil.virtual_memory()._asdict(),
+                }
+            }
 
     # You can still include your build_dir info if you like
     if build_lock.acquire(blocking=False):

@@ -31,7 +31,7 @@ def query_graph():
     index_path = os.path.join(INDEX_DIR, index_name)
 
     if build_lock.acquire(blocking=False):
-        if BUILD_DIR is None:
+        if not os.path.exists(BUILD_DIR):
             build_lock.release()
             return "Build not started. Please start the build first.", 400
         build_lock.release()

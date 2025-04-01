@@ -26,5 +26,5 @@ os.makedirs(STORAGE_ROOT, exist_ok=True)
 
 default_build = os.path.join(PROJECT_ROOT, "build", 'script_output')
 
-BUILD_DIR = default_build if os.path.exists(default_build) else None
+BUILD_DIR = default_build
 build_lock = threading.Lock() 

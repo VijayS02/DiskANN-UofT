@@ -51,6 +51,8 @@ def status():
             build_lock.release()
     else:
         stats["build_dir"] = "LOCKED"
+
+    return jsonify(stats), 200
         
 app.register_blueprint(file_bp)
 app.register_blueprint(index_bp)

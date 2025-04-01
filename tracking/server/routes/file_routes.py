@@ -22,5 +22,7 @@ def upload_file():
 
 @file_bp.route('/uploads')
 def list_files():
+    if not os.path.exists(UPLOADS_DIR):
+        return jsonify({"files": []})
     files = os.listdir(UPLOADS_DIR)
     return jsonify({"files": files})

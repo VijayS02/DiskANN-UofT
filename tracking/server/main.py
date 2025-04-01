@@ -1,8 +1,8 @@
 import os
 from flask import Flask, jsonify, render_template
 from flask_socketio import SocketIO
-from lib.util import create_build
 import matplotlib
+import psutil
 
 from config import SOCKETIO, PROJECT_ROOT, build_lock, BUILD_DIR
 
@@ -35,17 +35,22 @@ def run_build():
 
 @app.route("/status")
 def status():
+    stats = {
+        "cpu_percent": psutil.cpu_percent(interval=0.5),
+        "memory": psutil.virtual_memory()._asdict(),
+    }
+
+    # You can still include your build_dir info if you like
     if build_lock.acquire(blocking=False):
         try:
             if BUILD_DIR and os.path.exists(BUILD_DIR):
-                return jsonify({"build_dir": BUILD_DIR}), 200
-            return jsonify({"build_dir": "NONE"}), 200
+                stats["build_dir"] = BUILD_DIR
+            else:
+                stats["build_dir"] = "NONE"
         finally:
-            # Always release the lock
             build_lock.release()
     else:
-        # Lock couldn't be acquired immediately
-        return jsonify({"error": "Build operation in progress"}), 423 
+        stats["build_dir"] = "LOCKED"
         
 app.register_blueprint(file_bp)
 app.register_blueprint(index_bp)

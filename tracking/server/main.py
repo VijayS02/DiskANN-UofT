@@ -58,4 +58,4 @@ app.register_blueprint(query_bp)
 
 
 if __name__ == "__main__":
-    SOCKETIO.run(app, debug=True)
+    SOCKETIO.run(app, debug=True, host="0.0.0.0", port=5000)

@@ -12,6 +12,7 @@ interface FetchResult<T> {
 
 interface FetchOptions {
   pollIntervalMs?: number; // Optional polling interval for GET requests
+  onProgress?: (percent: number) => void;
 }
 
 export function toSuperscript(num: { toString: () => string }) {
@@ -51,8 +52,52 @@ const useFetch = <T,>(
     async (newPostData?: unknown) => {
       if (data === null) setLoading(true);
       setError(null);
+      const bodyData = newPostData || postData;
 
       try {
+        if (
+          method === "POST" &&
+          bodyData instanceof FormData &&
+          options.onProgress
+        ) {
+          const xhr = new XMLHttpRequest();
+
+          xhr.open("POST", "/api" + url);
+
+          xhr.upload.onprogress = (event) => {
+            console.log("XHR EVENT!", event);
+            if (event.lengthComputable) {
+              const percent = (event.loaded / event.total) * 100;
+              if (options.onProgress) {
+                options.onProgress(Math.round(percent));
+              }
+            }
+          };
+
+          xhr.onload = () => {
+            if (xhr.status >= 200 && xhr.status < 300) {
+              try {
+                const response = JSON.parse(xhr.responseText);
+                setData(response);
+              } catch {
+                setData(null);
+              }
+            } else {
+              setError(`Upload failed with status ${xhr.status}`);
+            }
+            setLoading(false);
+          };
+
+          xhr.onerror = () => {
+            setError("Upload failed.");
+            setLoading(false);
+          };
+
+          setPostData(bodyData);
+          xhr.send(bodyData);
+          return;
+        }
+
         const requestOptions: RequestInit = { method };
 
         if (method === "POST") {
@@ -82,9 +127,9 @@ const useFetch = <T,>(
         if (JSON.stringify(data) !== JSON.stringify(result)) {
           setData(result);
         }
+        setLoading(false);
       } catch (err) {
         setError((err as Error).message);
-      } finally {
         setLoading(false);
       }
     },

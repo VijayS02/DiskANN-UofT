@@ -1,6 +1,8 @@
 from flask import Blueprint, request, jsonify, send_file
 import os
 from config import UPLOADS_DIR
+import mimetypes
+from datetime import datetime
 
 file_bp = Blueprint("file", __name__)
 
@@ -24,5 +26,21 @@ def upload_file():
 def list_files():
     if not os.path.exists(UPLOADS_DIR):
         return jsonify({"files": []})
-    files = os.listdir(UPLOADS_DIR)
-    return jsonify({"files": files})
+
+    files_info = []
+    for filename in os.listdir(UPLOADS_DIR):
+        file_path = os.path.join(UPLOADS_DIR, filename)
+        if os.path.isfile(file_path):
+            size = os.path.getsize(file_path)
+            mime_type, _ = mimetypes.guess_type(file_path)
+            modified_time = datetime.fromtimestamp(os.path.getmtime(file_path)).isoformat()
+
+            files_info.append({
+                "filename": filename,
+                "size_bytes": size,
+                "mime_type": mime_type or "application/octet-stream",
+                "modified": modified_time,
+                "url": f"/uploads/{filename}"  # assuming you serve files from here
+            })
+
+    return jsonify({"files": files_info})

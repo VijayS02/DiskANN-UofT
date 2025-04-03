@@ -28,3 +28,5 @@ default_build = os.path.join(PROJECT_ROOT, "build", 'script_output')
 
 BUILD_DIR = default_build
 build_lock = threading.Lock() 
+
+operation_lock = threading.Lock()

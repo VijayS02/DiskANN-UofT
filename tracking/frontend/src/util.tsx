@@ -136,7 +136,7 @@ const useFetch = <T,>(
         setLoading(false);
       }
     },
-    [url, method, postData]
+    [url, method, postData, data]
   );
 
   useEffect(() => {

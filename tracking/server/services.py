@@ -1,4 +1,4 @@
-from config import UPLOADS_DIR, INDEX_DIR, RESULT_PATH, GT_FILES, BUILD_DIR, INDEX_PREFIX, SOCKETIO, build_lock
+from config import UPLOADS_DIR, INDEX_DIR, RESULT_PATH, GT_FILES, BUILD_DIR, INDEX_PREFIX, SOCKETIO, build_lock, operation_lock
 import os
 import io 
 import sys 
@@ -51,8 +51,9 @@ def stream_func(func):
             sys.stderr = stream
             
             try:
-                # Run the function and store result
-                result_container['value'] = func(*args, **kwargs)
+                with operation_lock:
+                    # Run the function and store result
+                    result_container['value'] = func(*args, **kwargs)
             except Exception as e:
                 # Capture any errors
                 error_msg = f"ERROR: {str(e)}"
@@ -93,7 +94,7 @@ def generate_gt_file(base_file, query_file, query_k):
     gt_k = max(query_k + 20, 100)
     os.makedirs(GT_FILES, exist_ok=True)
 
-    gt_file = os.path.join(GT_FILES, f"{hash_file(query_file)}_{gt_k}.gt")
+    gt_file = os.path.join(GT_FILES, f"{hash_file(base_file)}_{hash_file(query_file)}_{gt_k}.gt")
 
     if not os.path.exists(gt_file):
         compute_groundtruth = os.path.join(BUILD_DIR, "apps", 'utils', "compute_groundtruth")

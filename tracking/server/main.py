@@ -4,7 +4,7 @@ from flask_socketio import SocketIO
 import matplotlib
 import psutil
 
-from config import SOCKETIO, PROJECT_ROOT, build_lock, BUILD_DIR
+from config import SOCKETIO, PROJECT_ROOT, build_lock, BUILD_DIR, operation_lock
 
 from routes.file_routes import file_bp
 from routes.index_routes import index_bp
@@ -54,6 +54,14 @@ def status():
             build_lock.release()
     else:
         stats["build_dir"] = "LOCKED"
+
+    if operation_lock.acquire(blocking=False):
+        try:
+            stats["operation_lock"] = "available"
+        finally:
+            operation_lock.release()
+    else:
+        stats["operation_lock"] = "LOCKED"
 
     return jsonify(stats), 200
         

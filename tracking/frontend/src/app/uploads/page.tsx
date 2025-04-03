@@ -21,13 +21,15 @@ import { useState } from "react";
 import {
   Table,
   TableBody,
-  TableCaption,
   TableCell,
   TableFooter,
   TableHead,
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { ArrowLeftRight, Trash } from "lucide-react";
+import { Tooltip, TooltipTrigger } from "@/components/ui/tooltip";
+import { TooltipContent, TooltipProvider } from "@radix-ui/react-tooltip";
 
 export default function Page() {
   return (
@@ -131,7 +133,24 @@ function formatSize(bytes: number) {
 }
 
 function ListUploads() {
-  const { data, loading, error } = useFetch<any>("/uploads", "GET");
+  const { data, loading, error } = useFetch<any>("/uploads", "GET", undefined, {
+    pollIntervalMs: 3000,
+  });
+
+  const { loading: isDeleting, fetchData: deleteFile } = useFetch<any>(
+    "/uploads/delete",
+    "POST"
+  );
+
+  const { loading: isConverting, fetchData: fvecsToFbin } = useFetch<any>(
+    "/uploads/fvecs_to_fbin",
+    "POST"
+  );
+
+  const handleDeleteFile = (filename: string) => {
+    deleteFile({ filename });
+  };
+
   console.log(data);
   return (
     <Card>
@@ -141,39 +160,71 @@ function ListUploads() {
       <CardContent>
         {loading && <div>Loading files...</div>}
         {error && <div className="text-red-500">Error: {error}</div>}
-
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-[200px]">Filename</TableHead>
-              <TableHead>Size</TableHead>
-              <TableHead>Type</TableHead>
-              <TableHead className="text-right">Last Modified</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {data?.files?.map((file: FileData) => (
-              <TableRow key={file.filename}>
-                <TableCell className="font-medium">{file.filename}</TableCell>
-                <TableCell>{formatSize(file.size_bytes)}</TableCell>
-                <TableCell>{file.mime_type}</TableCell>
-                <TableCell className="text-right">
-                  {new Date(file.modified).toLocaleString()}
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-          {data?.files?.length > 0 && (
-            <TableFooter>
+        <TooltipProvider>
+          <Table>
+            <TableHeader>
               <TableRow>
-                <TableCell colSpan={3}>Total files</TableCell>
-                <TableCell className="text-right">
-                  {data.files.length}
-                </TableCell>
+                <TableHead className="w-[200px]">Filename</TableHead>
+                <TableHead>Size</TableHead>
+                <TableHead>Type</TableHead>
+                <TableHead className="text-right">Last Modified</TableHead>
+                <TableHead className="text-right"></TableHead>
               </TableRow>
-            </TableFooter>
-          )}
-        </Table>
+            </TableHeader>
+            <TableBody>
+              {data?.files?.map((file: FileData) => (
+                <TableRow key={file.filename}>
+                  <TableCell className="font-medium">{file.filename}</TableCell>
+                  <TableCell>{formatSize(file.size_bytes)}</TableCell>
+                  <TableCell>{file.mime_type}</TableCell>
+                  <TableCell className="text-right">
+                    {new Date(file.modified).toLocaleString()}
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex justify-end space-x-2">
+                      {file.filename.endsWith(".fvecs") && (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              disabled={isConverting}
+                              onClick={(e) => {
+                                fvecsToFbin({ filename: file.filename });
+                              }}
+                            >
+                              <ArrowLeftRight />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent className="bg-white shadow rounded p-2">
+                            Convert to .fbin
+                          </TooltipContent>
+                        </Tooltip>
+                      )}
+                      <Button
+                        disabled={isDeleting}
+                        onClick={(e) => {
+                          handleDeleteFile(file.filename);
+                        }}
+                        variant={"destructive"}
+                      >
+                        <Trash />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+            {data?.files?.length > 0 && (
+              <TableFooter>
+                <TableRow>
+                  <TableCell colSpan={4}>Total files</TableCell>
+                  <TableCell className="text-right">
+                    {data.files.length}
+                  </TableCell>
+                </TableRow>
+              </TableFooter>
+            )}
+          </Table>
+        </TooltipProvider>
       </CardContent>
     </Card>
   );

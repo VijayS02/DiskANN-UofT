@@ -50,7 +50,10 @@ const useFetch = <T,>(
 
   const fetchData = useCallback(
     async (newPostData?: unknown) => {
-      if (data === null) setLoading(true);
+      if (data === null) {
+        console.log("No data!");
+        setLoading(true);
+      }
       setError(null);
       const bodyData = newPostData || postData;
 

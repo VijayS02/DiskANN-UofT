@@ -21,6 +21,7 @@ import { useEffect, useState } from "react";
 interface Status {
   build_dir: string;
   device_stats: DeviceStatsProps;
+  operation_lock: string;
 }
 
 function Navbar() {
@@ -49,6 +50,8 @@ function Navbar() {
                     : "error"
                   : data?.build_dir === "NONE"
                   ? "no_build"
+                  : data?.operation_lock === "LOCKED"
+                  ? "running"
                   : "success"
               }
             />
@@ -223,7 +226,7 @@ function CreateBuild() {
 function Pinger({
   status,
 }: {
-  status: "loading" | "locked" | "error" | "success" | "no_build";
+  status: "loading" | "locked" | "error" | "success" | "no_build" | "running";
 }) {
   const statusMap = {
     loading: "Loading...",
@@ -231,6 +234,7 @@ function Pinger({
     error: "Error",
     success: "Build Ready",
     no_build: "No Build",
+    running: "Executing...",
   };
 
   const pingColors = {
@@ -239,6 +243,7 @@ function Pinger({
     error: "bg-gray-500",
     success: "bg-green-500 animate-pulse",
     no_build: "bg-orange-500",
+    running: "bg-sky-500 animate-pulse",
   };
 
   const dotColors = {
@@ -247,6 +252,7 @@ function Pinger({
     error: "bg-gray-500",
     success: "bg-green-500",
     no_build: "bg-orange-500",
+    running: "bg-sky-500",
   };
 
   // Instead of string interpolation, use conditional classes

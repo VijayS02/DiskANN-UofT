@@ -116,3 +116,74 @@ def fvecs_to_fbin():
         "message": "Conversion Initiated",
         "output_path": output_path,
     }), 200
+
+@file_bp.route('/uploads/generate_random_vectors', methods=['post'])
+def generate_random_vectors():
+    convert_executable = os.path.join(BUILD_DIR, 'apps', 'utils', 'rand_data_gen')
+    data = request.get_json()
+
+    required_fields = ['data_type', 'output_file', 'ndims', 'npts']
+    missing_fields = [field for field in required_fields if field not in data]
+    if missing_fields:
+        return jsonify({"error": f"Missing required fields: {', '.join(missing_fields)}"}), 400
+
+    data_type = data['data_type']
+    output_file = data['output_file']
+    ndims = str(data['ndims'])
+    npts = str(data['npts'])
+    norm = str(data.get('norm', -1))
+    rand_scaling = str(data.get('rand_scaling', 1))
+
+    output_path = os.path.join(UPLOADS_DIR, output_file)
+
+    try:
+        perform_generate_vectors(
+            convert_executable,
+            data_type,
+            output_path,
+            ndims,
+            npts,
+            norm,
+            rand_scaling
+        )
+
+        return jsonify({
+                    "message": "Creation Initiated",
+                    "output_path": output_path,
+                }), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@stream_func
+def perform_generate_vectors(exec, dtype, output_path, ndims, npts, norm, rand_scaling):
+    args = [
+        exec,
+        '--data_type', dtype,
+        '--output_file', output_path,
+        '-D', ndims,
+        '-N', npts,
+        '--norm', norm,
+        '--rand_scaling', rand_scaling
+    ]
+
+    process = subprocess.Popen(
+        args,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True
+    )
+
+    for line in process.stdout:
+        sys.stdout.write(line)
+        sys.stdout.flush()
+
+    for line in process.stderr:
+        sys.stderr.write(line)
+        sys.stderr.flush()
+
+    process.wait()
+    time.sleep(1)
+
+    if process.returncode != 0:
+        raise Exception("Error generating random vectors")

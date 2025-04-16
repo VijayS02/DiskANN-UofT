@@ -30,12 +30,14 @@ import {
 import { ArrowLeftRight, Trash } from "lucide-react";
 import { Tooltip, TooltipTrigger } from "@/components/ui/tooltip";
 import { TooltipContent, TooltipProvider } from "@radix-ui/react-tooltip";
+import GenerateRandomVectorsForm from "./generateDataForm";
 
 export default function Page() {
   return (
     <div className="space-y-5">
       <div className="text-3xl m-2 my-4">Manage Uploads</div>
       <UploadForm />
+      <GenerateRandomVectorsForm />
       <ListUploads />
     </div>
   );

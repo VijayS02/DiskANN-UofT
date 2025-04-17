@@ -29,6 +29,9 @@ typedef int FileHandle;
 #include "types.h"
 #include "tag_uint128.h"
 #include <any>
+#include <tracking/metrics.h>
+#include <chrono>
+#include <ctime>
 
 #ifdef EXEC_ENV_OLS
 #include "content_buf.h"
@@ -1245,6 +1248,12 @@ inline void printProcessMemory(const char *)
 inline size_t getMemoryUsage()
 { // for non-windows, we have not implemented this function
     return 0;
+}
+
+inline void printCurrentEpochInSeconds() {
+    auto now = std::chrono::system_clock::now();
+    std::time_t now_c = std::chrono::system_clock::to_time_t(now);
+    diskann::cout << "[kimkyle time] Current time in seconds since epoch: " << now_c  << "\n" << std::endl;
 }
 
 #endif

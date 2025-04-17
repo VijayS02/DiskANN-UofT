@@ -23,13 +23,16 @@ class IndexWriteParameters
     const float alpha;
     const uint32_t num_threads;
     const uint32_t filter_list_size; // Lf
+    const uint32_t n_pass;
+    const uint32_t n_node;
+    const uint32_t n_node_from_gt;
 
     IndexWriteParameters(const uint32_t search_list_size, const uint32_t max_degree, const bool saturate_graph,
                          const uint32_t max_occlusion_size, const float alpha, const uint32_t num_threads,
-                         const uint32_t filter_list_size)
+                         const uint32_t filter_list_size, const uint32_t n_pass, const uint32_t n_node, const uint32_t n_node_from_gt)
         : search_list_size(search_list_size), max_degree(max_degree), saturate_graph(saturate_graph),
           max_occlusion_size(max_occlusion_size), alpha(alpha), num_threads(num_threads),
-          filter_list_size(filter_list_size)
+          filter_list_size(filter_list_size), n_pass(n_pass), n_node(n_node), n_node_from_gt(n_node_from_gt)
     {
     }
 
@@ -91,10 +94,28 @@ class IndexWriteParametersBuilder
         return *this;
     }
 
+    IndexWriteParametersBuilder &with_n_pass(const uint32_t n_pass)
+    {
+        _n_pass = n_pass;
+        return *this;
+    }
+
+    IndexWriteParametersBuilder &with_n_node(const uint32_t n_node)
+    {
+        _n_node = n_node;
+        return *this;
+    }
+
+    IndexWriteParametersBuilder &with_n_node_from_gt(const uint32_t n_node_from_gt)
+    {
+        _n_node_from_gt = n_node_from_gt;
+        return *this;
+    }
+
     IndexWriteParameters build() const
     {
         return IndexWriteParameters(_search_list_size, _max_degree, _saturate_graph, _max_occlusion_size, _alpha,
-                                    _num_threads, _filter_list_size);
+                                    _num_threads, _filter_list_size, _n_pass, _n_node, _n_node_from_gt);
     }
 
     IndexWriteParametersBuilder(const IndexWriteParameters &wp)
@@ -114,6 +135,9 @@ class IndexWriteParametersBuilder
     float _alpha{defaults::ALPHA};
     uint32_t _num_threads{defaults::NUM_THREADS};
     uint32_t _filter_list_size{defaults::FILTER_LIST_SIZE};
+    uint32_t _n_pass{1};
+    uint32_t _n_node{0};
+    uint32_t _n_node_from_gt{0};
 };
 
 } // namespace diskann

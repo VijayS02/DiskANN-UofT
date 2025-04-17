@@ -1,6 +1,8 @@
 from abc import ABC, abstractmethod
 
 import numpy as np
+import pandas as pd
+from scipy.stats import ttest_ind
 
 from tracking.lib.abstract_trackers import AbstractMetricTracker
 
@@ -152,6 +154,101 @@ class ChangeOverTimeTracker(AbstractMetricTracker, ABC):
             (x,y) = self.experiments[title]
             ax.plot(x, y, label=title, alpha=0.5)
 
+
+        set_graph_props(ax, self.get_graph_props())
+        ax.legend()
+
+
+class ScatterPlotTracker(AbstractMetricTracker, ABC):
+    """
+    Tracks how a metric changes over time across multiple experiments.
+
+    The `ChangeOverTimeTracker` class records time-series data for a given metric, supporting
+    both cumulative and averaged tracking. It allows visualization of trends by plotting
+    changes over time using Matplotlib.
+
+    Attributes:
+        time_series (List[float]): A list storing time-based metric values for the current experiment.
+        experiments (Dict[str, Tuple[np.ndarray, List[float]]]): A dictionary storing time-series data
+            for multiple experiments, where keys are experiment titles, and values are tuples
+            containing x-values (time indices) and y-values (metric values).
+        average (bool): If `True`, the tracker stores counts and computes the average value
+            for each time step.
+        counts (List[int]): A list tracking the number of data points contributing to each time step
+            (used only when `average=True`).
+    """
+    def __init__(self, metric: str, average=False):
+        super().__init__(metric)
+        self.time_series = []
+        self.experiments = dict()
+        self.average = average
+        self.counts = []
+
+    @abstractmethod
+    def get_graph_props(self):
+        pass
+
+    def add_data_point(self, metric_data, i=-1):
+        if i == -1:
+            self.time_series.append(metric_data)
+            if self.average:
+                self.counts.append(1)
+        elif i >= len(self.time_series):
+            self.time_series.append(metric_data)
+            if self.average:
+                self.counts.append(1)
+        else:
+            self.time_series[i] = self.time_series[i] + metric_data
+            if self.average:
+                self.counts[i] += 1
+
+    def has_graph(self):
+        return True
+
+    def end_experiment(self, title):
+        if not self.time_series:
+            self.experiments[title] = None
+
+        x_values =  np.arange(len(self.time_series))
+
+        if self.average:
+            y_values = [self.time_series[i] / self.counts[i] if self.counts[i] != 0 else 0
+                        for i in range(len(self.time_series))]
+        else:
+             y_values = self.time_series
+
+        print(len(self.time_series))
+        self.experiments[title] = (x_values,y_values)
+
+        self.time_series = []
+
+    def generate_subplot(self,ax):
+        """Plots the edge count occurrences as a bar chart."""
+
+        for title in self.experiments:
+            (x,y) = self.experiments[title]
+
+            # here, maybe we could print the p value.
+            res = ttest_ind(x, y)
+            print(f"kimkyle: T-Test result, raw: {res}")
+
+            df = pd.DataFrame({'Node_ID': x, 'Recall': y})
+            df['Recall'] = df['Recall'] * 10
+
+            # Create bins and group data
+            # df['Bin'] = pd.cut(df['Node_ID'], bins=range(0, 100001, 1000))
+            df['Bin'] = pd.cut(df['Node_ID'], bins=range(0, len(x)+1, len(x)//10))
+
+            # Calculate average recall for each bin
+            grouped = df.groupby('Bin')['Recall'].mean().reset_index()
+
+            # Extract the bin start values for x-axis
+            grouped['Bin_Start'] = grouped['Bin'].apply(lambda x: x.left)
+
+            ax.plot(grouped['Bin_Start'], grouped['Recall'], marker='o')
+            res = ttest_ind(grouped['Bin_Start'], grouped['Recall'])
+            print(f"kimkyle: T-Test result, bin: {res}")
+            # ax.set_ylim(0.0, 1.0)
 
         set_graph_props(ax, self.get_graph_props())
         ax.legend()

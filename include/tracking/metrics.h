@@ -66,6 +66,10 @@ inline void ConfigureExperimentQuery(size_t queries)
     MetricTracker::Track("configure_experiment", jsonData);
 }
 
+inline void AddEdgeCountClosestNodes(uint32_t number)
+{
+    MetricTracker::Track("add_edge_count_closest_nodes", number);
+}
 
 inline void NodeInfo(uint32_t node, std::vector<float> neighbor_distances)
 {
@@ -78,5 +82,13 @@ inline void NodeInfo(uint32_t node, std::vector<float> neighbor_distances)
 
 }
 
+inline void AddRecall(size_t nodeId, uint32_t recall)
+{
+    const nlohmann::json jsonData = {
+        {"nodeid", nodeId},
+        {"recall", recall}
+    };
+    MetricTracker::Track("recall_per_node", jsonData);
+}
 
 #endif //METRICS_H

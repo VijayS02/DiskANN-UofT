@@ -40,6 +40,22 @@ void InMemGraphStore::add_neighbour(const location_t i, location_t neighbour_id)
     }
 }
 
+// Return True if new neighbor is added. Else false (neighbour already present).
+bool InMemGraphStore::add_non_dup_neighbour(const location_t i, location_t neighbour_id)
+{
+    if (std::find(_graph[i].begin(), _graph[i].end(), neighbour_id) != _graph[i].end()) {
+        // neighbour is already present.
+        return false;
+    }
+
+    _graph[i].emplace_back(neighbour_id);
+    if (_max_observed_degree < _graph[i].size())
+    {
+        _max_observed_degree = (uint32_t)(_graph[i].size());
+    }
+    return true;
+}
+
 void InMemGraphStore::clear_neighbours(const location_t i)
 {
     _graph[i].clear();

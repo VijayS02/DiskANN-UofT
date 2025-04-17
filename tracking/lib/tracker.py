@@ -7,6 +7,7 @@ import zmq
 import json
 from tracking.lib.abstract_trackers import AbstractConstructionTracker, AbstractMetricTracker, AbstractQueryTracker
 import threading
+from datetime import datetime
 
 import matplotlib.pyplot as plt
 
@@ -68,6 +69,10 @@ class AbstractTrackingRunner:
 
         plt.tight_layout()
         plt.show()
+
+        # [CSC 2525]
+        # Hard-coded path for saving figures.
+        plt.savefig(f"/home/kylekim/workspace/DiskANN-UofT/fig/{str(datetime.now())}.jpg")
 
     def end_experiment(self, title):
         for (tracker, metric) in self.iterate_trackers():

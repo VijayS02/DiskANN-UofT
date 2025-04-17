@@ -28,7 +28,7 @@ namespace po = boost::program_options;
 int main(int argc, char **argv)
 {
     std::string data_type, dist_fn, data_path, index_path_prefix, label_file, universal_label, label_type, connection_str;
-    uint32_t num_threads, R, L, Lf, build_PQ_bytes;
+    uint32_t num_threads, R, L, Lf, build_PQ_bytes, n_node, n_pass, n_node_from_gt;
     float alpha;
     bool use_pq_build, use_opq, saturate_graph;
 
@@ -81,6 +81,15 @@ int main(int argc, char **argv)
 
 
 
+        optional_configs.add_options()("n_node", po::value<uint32_t>(&n_node)->default_value(0),
+                                       program_options_utils::USE_OPQ);
+
+        optional_configs.add_options()("n_node_from_gt", po::value<uint32_t>(&n_node_from_gt)->default_value(0),
+                                       program_options_utils::USE_OPQ);
+
+        optional_configs.add_options()("n_pass", po::value<uint32_t>(&n_pass)->default_value(1),
+                                       program_options_utils::USE_OPQ);
+
         // Merge required and optional parameters
         desc.add(required_configs).add(optional_configs);
 
@@ -128,7 +137,11 @@ int main(int argc, char **argv)
     {
         diskann::cout << "Saturate graph: "<< saturate_graph << std::endl;
         diskann::cout << "Starting index build with R: " << R << "  Lbuild: " << L << "  alpha: " << alpha
-                      << "  #threads: " << num_threads << std::endl;
+                      << "  #threads: " << num_threads 
+                      << "  #n_node: " << n_node
+                      << "  #n_node_from_gt: " << n_node_from_gt
+                      << "  #n_pass: " << n_pass
+                      << std::endl;
 
         size_t data_num, data_dim;
         diskann::get_bin_metadata(data_path, data_num, data_dim);
@@ -138,6 +151,9 @@ int main(int argc, char **argv)
                                       .with_alpha(alpha)
                                       .with_saturate_graph(saturate_graph)
                                       .with_num_threads(num_threads)
+                                      .with_n_pass(n_pass)
+                                      .with_n_node(n_node)
+                                      .with_n_node_from_gt(n_node_from_gt)
                                       .build();
 
         auto filter_params = diskann::IndexFilterParamsBuilder()

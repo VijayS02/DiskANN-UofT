@@ -310,7 +310,7 @@ int main(int argc, char **argv)
         required_configs.add_options()("query_file", po::value<std::string>(&query_file)->required(),
                                        program_options_utils::QUERY_FILE_DESCRIPTION);
         required_configs.add_options()("recall_at,K", po::value<uint32_t>(&K)->required(),
-                                       program_options_utils::NUMBER_OF_RESULTS_DESCRIPTION);
+                                    program_options_utils::NUMBER_OF_RESULTS_DESCRIPTION);
         required_configs.add_options()("search_list,L",
                                        po::value<std::vector<uint32_t>>(&Lvec)->multitoken()->required(),
                                        program_options_utils::SEARCH_LIST_DESCRIPTION);

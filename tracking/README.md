@@ -2,7 +2,11 @@
 
 ## Requirements
 
- - [Libmzq](https://github.com/zeromq/libzmq)
+ - [Libmzq](https://github.com/zeromq/libzmq). For the case of Ubuntu, you can install using the following commands;
+ ```
+ sudo apt-get update
+ sudo apt-get install libzmq3-dev
+ ```
  - Linux
 
 

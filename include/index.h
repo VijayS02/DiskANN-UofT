@@ -393,8 +393,17 @@ template <typename T, typename TagT = uint32_t, typename LabelT = uint32_t> clas
     uint32_t _indexingQueueSize;
     uint32_t _indexingRange;
     uint32_t _indexingMaxC;
+    uint32_t _indexingNPass;
+    uint32_t _indexingNNode;
+    uint32_t _indexingNNodeFromGt;
     float _indexingAlpha;
     uint32_t _indexingThreads;
+
+    // Ground truth variables.
+    uint32_t *_gt_ids;
+    float *_gt_dists;
+    size_t _gt_num, _gt_dim;
+    std::vector<std::vector<Neighbor>> _pool_ids;
 
     // Query scratch data structures
     ConcurrentQueue<InMemQueryScratch<T> *> _query_scratch;

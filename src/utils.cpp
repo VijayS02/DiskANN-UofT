@@ -159,6 +159,8 @@ double calculate_recall(uint32_t num_queries, uint32_t *gold_std, float *gs_dist
                 cur_recall++;
             }
         }
+
+        AddRecall(i, cur_recall);
         total_recall += cur_recall;
     }
     return total_recall / (num_queries) * (100.0 / recall_at);

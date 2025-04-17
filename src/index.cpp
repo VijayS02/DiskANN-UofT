@@ -42,6 +42,14 @@ Index<T, TagT, LabelT>::Index(const IndexConfig &index_config, std::shared_ptr<A
       _filtered_index(index_config.filtered_index), _num_pq_chunks(index_config.num_pq_chunks),
       _delete_set(new tsl::robin_set<uint32_t>), _conc_consolidate(index_config.concurrent_consolidate)
 {
+    // [CSC 2525]
+    // Load the groud truth variables, as part of N-Nodes ground truth method.
+    // For now, this parameter is hard-coded into the binary.
+    // const std::string truthset_file = "/home/kylekim/workspace/DiskANN-UofT/build/data/sift/base:sift_learn.fbin_query:sift_query.fbin.gt_100"; // TODO: For now, hard coded.
+    // const std::string truthset_file = "/home/kylekim/workspace/DiskANN-UofT/build/data/sift/base:sift_base.fbin_query:sift_base.fbin.gt_100"; // TODO: For now, hard coded.
+    const std::string truthset_file = "/home/kylekim/workspace/DiskANN-UofT/build/data/sift/base:sift_learn.fbin_query:sift_learn.fbin.gt_100"; // TODO: For now, hard coded.
+    diskann::load_truthset(truthset_file, _gt_ids, _gt_dists, _gt_num, _gt_dim);
+
     if (_dynamic_index && !_enable_tags)
     {
         throw ANNException("ERROR: Dynamic Indexing must have tags enabled.", -1, __FUNCSIG__, __FILE__, __LINE__);
@@ -103,6 +111,9 @@ Index<T, TagT, LabelT>::Index(const IndexConfig &index_config, std::shared_ptr<A
         _filterIndexingQueueSize = index_config.index_write_params->filter_list_size;
         _indexingThreads = index_config.index_write_params->num_threads;
         _saturate_graph = index_config.index_write_params->saturate_graph;
+        _indexingNPass = index_config.index_write_params->n_pass;
+        _indexingNNode = index_config.index_write_params->n_node;
+        _indexingNNodeFromGt = index_config.index_write_params->n_node_from_gt;
 
         if (index_config.index_search_params != nullptr)
         {
@@ -1153,6 +1164,40 @@ void Index<T, TagT, LabelT>::occlude_list(const uint32_t location, std::vector<N
         }
         cur_alpha *= 1.2f;
     }
+
+    _pool_ids.push_back(pool); // Instead of the ground truth, we will refer to this instead during post-processing.
+
+    // // Four nodes replacement, in-processing.
+    // int replaced = 0;
+    // for (auto const &iter : pool) { // Pool is already sorted by ASC distance.
+    //     if (replaced >= std::min(static_cast<size_t>(_indexingNNode), result.size())) {
+    //         break;
+    //     }
+
+    //     // Replace with a closer node, if not already present in the result vector.
+    //     if (std::find(result.begin(), result.end(), iter.id) == result.end()) {
+    //         // Replace from the back. We do this, since result vector is ordered in ASC distance.
+    //         result[result.size() -1 -replaced] = iter.id;
+    //         replaced++;
+    //     }
+    // }
+
+    // // Four nodes replacement, in-processing.
+    // replaced = 0;
+    // uint32_t *gt_i = _gt_ids + _gt_dim * location; // Pointer arithmetic. By the implementation, the closest point is indexed at 0.
+    // for (int i = 1; i < _gt_dim; i++) { // Pool is already sorted by ASC distance.
+    //     if (replaced >= std::min(static_cast<size_t>(_indexingNNodeFromGt), result.size())) {
+    //         break;
+    //     }
+
+    //     uint32_t nei_from_gt = *(gt_i + i);
+    //     // Replace with a closer node, if not already present in the result vector.
+    //     if (std::find(result.begin(), result.end(), nei_from_gt) == result.end()) {
+    //         // Replace from the back. We do this, since result vector is ordered in ASC distance.
+    //         result[result.size() -1 -replaced] = nei_from_gt;
+    //         replaced++;
+    //     }
+    // }
 }
 
 template <typename T, typename TagT, typename LabelT>
@@ -1189,6 +1234,26 @@ void Index<T, TagT, LabelT>::prune_neighbors(const uint32_t location, std::vecto
 
     occlude_list(location, pool, alpha, range, max_candidate_size, pruned_list, scratch);
     assert(pruned_list.size() <= range);
+
+    // Four nodes one pass algorithm.
+    // Just add four closest from the frontier (pool).
+    // Ultimately, the `pruned_list` becomes the new neighbor vector within the caller.
+
+    // Below is push without replacement.
+    // Here, some tradeoff replacement can be made.
+    // 1. Remove furthest edges (prioritize closest edges).
+    // 2. Remove random edges.
+    // int N_nodes = 4;
+    // int added = 0;
+    // for (const auto &node : pool) {
+    //     if ((std::find(pruned_list.begin(), pruned_list.end(), node.id) == pruned_list.end()) && node.id != location) {
+    //         pruned_list.push_back(node.id);
+    //         added++;
+    //     }
+    //     if (added == N_nodes) {
+    //         break;
+    //     }
+    // }
 
     if (_saturate_graph && alpha > 1)
     {
@@ -1305,38 +1370,45 @@ template <typename T, typename TagT, typename LabelT> void Index<T, TagT, LabelT
     diskann::Timer link_timer;
 
 #pragma omp parallel for schedule(dynamic, 2048)
-    for (int64_t node_ctr = 0; node_ctr < (int64_t)(visit_order.size()); node_ctr++)
-    {
-        auto node = visit_order[node_ctr];
-
-        // Find and add appropriate graph edges
-        ScratchStoreManager<InMemQueryScratch<T>> manager(_query_scratch);
-        auto scratch = manager.scratch_space();
-        std::vector<uint32_t> pruned_list;
-        if (_filtered_index)
+    // [CSC 2525]
+    // N-Pass method.
+    for (int i = 0; i < _indexingNPass; i++) { // Run the "GreedySearch -> RobustPrune" n_pass times.
+        printCurrentEpochInSeconds();
+        for (int64_t node_ctr = 0; node_ctr < (int64_t)(visit_order.size()); node_ctr++)
         {
-            search_for_point_and_prune(node, _indexingQueueSize, pruned_list, scratch, true, _filterIndexingQueueSize);
-        }
-        else
-        {
-            search_for_point_and_prune(node, _indexingQueueSize, pruned_list, scratch);
-        }
-        assert(pruned_list.size() > 0);
+            auto node = visit_order[node_ctr];
 
-        {
-            LockGuard guard(_locks[node]);
+            // Find and add appropriate graph edges
+            ScratchStoreManager<InMemQueryScratch<T>> manager(_query_scratch);
+            auto scratch = manager.scratch_space();
+            std::vector<uint32_t> pruned_list;
+            if (_filtered_index)
+            {
+                search_for_point_and_prune(node, _indexingQueueSize, pruned_list, scratch, true, _filterIndexingQueueSize);
+            }
+            else
+            {
+                search_for_point_and_prune(node, _indexingQueueSize, pruned_list, scratch);
+            }
+            assert(pruned_list.size() > 0);
 
-            _graph_store->set_neighbours(node, pruned_list);
-            assert(_graph_store->get_neighbours((location_t)node).size() <= _indexingRange);
+            {
+                LockGuard guard(_locks[node]);
+
+                _graph_store->set_neighbours(node, pruned_list);
+                assert(_graph_store->get_neighbours((location_t)node).size() <= _indexingRange);
+            }
+
+            inter_insert(node, pruned_list, scratch);
+
+            if (node_ctr % 100000 == 0)
+            {
+                diskann::cout << "\r" << (100.0 * node_ctr) / (visit_order.size()) << "% of index build completed."
+                            << std::flush;
+            }
         }
-
-        inter_insert(node, pruned_list, scratch);
-
-        if (node_ctr % 100000 == 0)
-        {
-            diskann::cout << "\r" << (100.0 * node_ctr) / (visit_order.size()) << "% of index build completed."
-                          << std::flush;
-        }
+        printCurrentEpochInSeconds();
+        _pool_ids.clear(); // This way, post-processing will refer to the 2nd one.
     }
 
     if (_nd > 0)
@@ -1371,6 +1443,53 @@ template <typename T, typename TagT, typename LabelT> void Index<T, TagT, LabelT
             _graph_store->set_neighbours((location_t)node, new_out_neighbors);
         }
     }
+
+    // [CSC 2525]
+    // N-Nodes method, sourcing from the frontier.
+    for (int64_t node_ctr = 0; node_ctr < (int64_t)(visit_order.size()); node_ctr++) {
+        int replaced = 0;
+        auto result = _graph_store->get_neighbours(node_ctr);
+        for (auto const &iter : _pool_ids[node_ctr]) { // Pool is already sorted by ASC distance.
+            if (replaced >= std::min(static_cast<size_t>(_indexingNNode), result.size())) {
+                break;
+            }
+
+            // Replace with a closer node, if not already present in the result vector.
+            if (iter.id != node_ctr && std::find(result.begin(), result.end(), iter.id) == result.end()) {
+                // Replace from the back. We do this, since result vector is ordered in ASC distance.
+                result[result.size() -1 -replaced] = iter.id;
+                replaced++;
+            }
+        }
+
+        _graph_store->clear_neighbours(node_ctr);
+        _graph_store->set_neighbours(node_ctr, result);
+    }
+
+    // [CSC 2525]
+    // N-Nodes method, sourcing from the ground truth.
+    for (int64_t node_ctr = 0; node_ctr < (int64_t)(visit_order.size()); node_ctr++) {
+        int replaced = 0;
+        uint32_t *gt_i = _gt_ids + _gt_dim * node_ctr; // Pointer arithmetic. By the implementation, the closest point is indexed at 0.
+        auto result = _graph_store->get_neighbours(node_ctr);
+        for (int i = 0; i < _gt_dim; i++) { // Pool is already sorted by ASC distance.
+            if (replaced >= std::min(static_cast<size_t>(_indexingNNodeFromGt), result.size())) {
+                break;
+            }
+
+            uint32_t nei_from_gt = *(gt_i + i);
+            // Replace with a closer node, if not already present in the result vector.
+            if (nei_from_gt != node_ctr && std::find(result.begin(), result.end(), nei_from_gt) == result.end()) {
+                // Replace from the back. We do this, since result vector is ordered in ASC distance.
+                result[result.size() -1 -replaced] = nei_from_gt;
+                replaced++;
+            }
+        }
+
+        _graph_store->clear_neighbours(node_ctr);
+        _graph_store->set_neighbours(node_ctr, result);
+    }
+
     if (_nd > 0)
     {
         diskann::cout << "done. Link time: " << ((double)link_timer.elapsed() / (double)1000000) << "s" << std::endl;

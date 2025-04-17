@@ -10,10 +10,20 @@ import seaborn as sns
 from tracking.lib.abstract_trackers import AbstractConstructionTracker
 from tracking.lib.basic_metric_types import FrequencyTracker, ChangeOverTimeTracker
 from tracking.lib.tracker import ConstructionTrackingRunner
+
 import subprocess
 import time
 import os
 
+"""
+If you get import errors below, try exporting your PYTHONPATH env variables to the pwd
+export PYTHONPATH="$(pwd)"
+
+scp -r syslab-remote:/home/kylekim/workspace/DiskANN-UofT/fig ~/Documents/fig
+"""
+from tracking.lib.abstract_trackers import AbstractConstructionTracker
+from tracking.lib.basic_metric_types import FrequencyTracker, ChangeOverTimeTracker, ScatterPlotTracker
+from tracking.lib.tracker import ConstructionTrackingRunner
 from tracking.lib.util import download_sift, create_build
 
 class AddEdgeCountTracker(FrequencyTracker, AbstractConstructionTracker):
@@ -144,6 +154,25 @@ class NodeDistanceTracker(AbstractConstructionTracker):
         self.data[title] = dict(self.node_distances)
         self.node_distances.clear()
 
+class AddEdgeCountClosestNodesTracker(FrequencyTracker, AbstractConstructionTracker):
+    def __init__(self):
+        super().__init__("add_edge_count_closest_nodes", bins=40)
+
+    def handle_metric_event(self, metric_data):
+        self.add_data_point(metric_data)
+
+    def has_text_output(self):
+        return False
+
+    def print_text_output(self):
+        return None
+
+    def get_graph_props(self):
+        return {"x": "Edge Counts (Closest Nodes)", "y": "Frequency", "title": "Edge Count Distribution (Closest Nodes)" }
+
+    def initialize_construction(self, construction_params):
+        print("Construction Started!")
+        print(construction_params)
 
 
 if __name__ == "__main__":
@@ -166,13 +195,17 @@ if __name__ == "__main__":
 
     build_memory_index = os.path.join(apps_dir, "build_memory_index")
 
-    base_file_name = "sift_learn.fbin"
+    base_file_name = "sift_base.fbin"
+    # base_file_name = "sift_learn.fbin"
 
     # Paths to dataset files
     base_file = os.path.join(sift_folder, base_file_name)
 
     tracker = ConstructionTrackingRunner(build_memory_index,
-                                         metric_handlers=[AddEdgeCountTracker(), NodeDistanceTracker()])
+                                         metric_handlers=[AddEdgeCountTracker(), 
+                                                          AddEdgeCountClosestNodesTracker(), 
+                                                          ConstructionPathLengthFreqTracker(),
+                                                          ConstructionPathLengthOverTimeTracker()])
 
 
     tracking_port = 5555
@@ -186,7 +219,7 @@ if __name__ == "__main__":
             "saturate_graph": True,
         },
         {
-            'r':32,
+            'r':70,
             'l_build': 50,
             'alpha': 1.2,
             "saturate_graph": False,
@@ -198,7 +231,9 @@ if __name__ == "__main__":
         alpha = experiment['alpha']
         l_build=experiment['l_build']
 
-        title = f"R{str(r)}_L{str(l_build)}_A{str(alpha).replace(".","-")}{"_SAT" if experiment['saturate_graph'] else ""}"
+        # title = f"R{str(r)}_L{str(l_build)}_A{str(alpha).replace(".","-")}{"_SAT" if experiment['saturate_graph'] else ""}"
+        title = f"R{str(r)}_L{str(l_build)}_A{str(alpha).replace(".","-")}{"_SAT" if experiment['saturate_graph'] else ""}_fournodes_replace_furthest"
+        # title = f"R{str(r)}_L{str(l_build)}_A{str(alpha).replace(".","-")}{"_SAT" if experiment['saturate_graph'] else ""}_fournodes_replace_furthest_2_pass"
         exp_folder = os.path.join(sift_folder, title)
         os.makedirs(exp_folder,exist_ok=True)
 

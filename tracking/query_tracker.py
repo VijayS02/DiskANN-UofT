@@ -1,5 +1,5 @@
 from tracking.lib.abstract_trackers import AbstractQueryTracker
-from tracking.lib.basic_metric_types import FrequencyTracker, ChangeOverTimeTracker
+from tracking.lib.basic_metric_types import FrequencyTracker, ChangeOverTimeTracker, ScatterPlotTracker
 from tracking.lib.tracker import QueryTrackerRunner
 import subprocess
 import os
@@ -102,6 +102,35 @@ class MinDistanceConvergence(FrequencyTracker, AbstractQueryTracker):
         return {"x": "Portion of steps taken to reach min", "y": "Freq", "title": "Steps to Closest Node Dist" }
 
 
+class RecallPerNodeID(ScatterPlotTracker, AbstractQueryTracker):
+    def __init__(self):
+        super().__init__("recall_per_node", average=True)
+        self.pos = 0
+        self.store = []
+
+    def end_query(self, data):
+        self.pos = 0
+
+    def has_text_output(self):
+        return False
+
+    def print_text_output(self):
+        return None
+
+    def handle_metric_event(self, metric_data):
+        val = metric_data['recall']
+        self.add_data_point(val, i=self.pos)
+        self.pos += 1
+
+    def get_graph_props(self):
+        return {"x": "Node ID (Ascending by construction order)", "y": "Recall (%)", "title": "Recall per Node ID" }
+
+
+from enum import Enum
+class Dataset(Enum):
+    SIFT_100k = 1 # learn
+    SIFT_1M = 2 # base
+    OPENAI_2M = 3
 
 if __name__ == "__main__":
     parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
@@ -125,8 +154,18 @@ if __name__ == "__main__":
     build_memory_index = os.path.join(apps_dir, "build_memory_index")
     search_memory_index = os.path.join(apps_dir, "search_memory_index")
 
-    query_file_name = "sift_query.fbin"
-    base_file_name = "sift_learn.fbin"
+    """
+    [CSC 2525]
+    
+    For now, the query_file and base_file is hard-coded here.
+    Based on your experiment, you will need to tweak below values accordingly.
+    Eventually, we want this to conditionally flip based on the dataset enum referred in the `experiments` list.
+    """
+    # query_file_name = "sift_query.fbin"
+    # query_file_name = "sift_learn.fbin"
+    # base_file_name = "sift_learn.fbin" # For 100k
+    query_file_name = "sift_base.fbin"
+    base_file_name = "sift_base.fbin" # For 1M.
 
     # Paths to dataset files
     base_file = os.path.join(sift_folder, base_file_name)
@@ -137,7 +176,7 @@ if __name__ == "__main__":
 
     # Paths to dataset files
     query_file = os.path.join(sift_folder, query_file_name)
-    gt_file = os.path.join(sift_folder, query_file + f".gt_{str(gt_k)}")
+    gt_file = os.path.join(sift_folder, f"base:{base_file_name}_query:{query_file_name}.gt_{str(gt_k)}")
     stats_folder = os.path.join(sift_folder, "stats")
     construction_stats = os.path.join(stats_folder, "construction_stats")
 
@@ -159,38 +198,184 @@ if __name__ == "__main__":
             print("Ground truth file already exists, skipping gt calculation.")
 
     tracker = QueryTrackerRunner(build_memory_index, search_memory_index,
-                                metric_handlers=[NodeVisitedDistribution(), QueryTimeDistribution(), AverageDistancePerStep(),
-                                                 MinDistanceConvergence()])
+                                metric_handlers=[# NodeVisitedDistribution(), 
+                                                RecallPerNodeID(),
+                                                QueryTimeDistribution(), 
+                                                #  AverageDistancePerStep(),
+                                                #  MinDistanceConvergence(),
+                                                 ])
 
-
+    """
+    [CSC 2525]
+    
+    Below `experiments` list outlines the series of experiments to be compared on a single plot.
+    It can also serve as an automation tool for various index construction.
+    """
     experiments = [
-        {
-            'r':32,
-            'l_build': 50,
-            'alpha': 1.2,
-            "saturate_graph": True,
-        },
-        {
+        # { # naive
+        #     'r':32,
+        #     'l_build': 50,
+        #     'alpha': 1.2,
+        #     "saturate_graph": False,
+        #     "n_node": 0,
+        #     "n_node_from_gt": 0,
+        #     "n_pass": 1,
+        #     "l_search": 10,
+        #     "k_search": 10,
+        #     "dataset": Dataset.SIFT_100k # TODO: For now, this enum is used for title generation. But we should use this to conditionally build new index.
+        # },
+        # { # naive
+        #     'r':32,
+        #     'l_build': 50,
+        #     'alpha': 1.2,
+        #     "saturate_graph": False,
+        #     "n_node": 0,
+        #     "n_node_from_gt": 0,
+        #     "n_pass": 2,
+        #     "l_search": 10,
+        #     "k_search": 10,
+        #     "dataset": Dataset.SIFT_100k # TODO: For now, this enum is used for title generation. But we should use this to conditionally build new index.
+        # },
+        # { # naive
+        #     'r':32,
+        #     'l_build': 50,
+        #     'alpha': 1.2,
+        #     "saturate_graph": False,
+        #     "n_node": 0,
+        #     "n_node_from_gt": 0,
+        #     "n_pass": 1,
+        #     "l_search": 10,
+        #     "k_search": 10,
+        #     "dataset": Dataset.SIFT_100k # TODO: For now, this enum is used for title generation. But we should use this to conditionally build new index.
+        # },
+        # { # naive
+        #     'r':32,
+        #     'l_build': 50,
+        #     'alpha': 1.2,
+        #     "saturate_graph": False,
+        #     "n_node": 4,
+        #     "n_node_from_gt": 0,
+        #     "n_pass": 2,
+        #     "l_search": 10,
+        #     "k_search": 10,
+        #     "dataset": Dataset.SIFT_100k # TODO: For now, this enum is used for title generation. But we should use this to conditionally build new index.
+        # },
+        # { # naive
+        #     'r':32,
+        #     'l_build': 50,
+        #     'alpha': 1.2,
+        #     "saturate_graph": False,
+        #     "n_node": 0,
+        #     "n_node_from_gt": 4,
+        #     "n_pass": 1,
+        #     "l_search": 10,
+        #     "k_search": 10,
+        #     "dataset": Dataset.SIFT_100k # TODO: For now, this enum is used for title generation. But we should use this to conditionally build new index.
+        # },
+        # { # naive
+        #     'r':32,
+        #     'l_build': 50,
+        #     'alpha': 1.2,
+        #     "saturate_graph": False,
+        #     "n_node": 0,
+        #     "n_node_from_gt": 0,
+        #     "n_pass": 1,
+        #     "l_search": 50,
+        #     "k_search": 50,
+        #     "dataset": Dataset.SIFT_1M # TODO: For now, this enum is used for title generation. But we should use this to conditionally build new index.
+        # },
+        { # only four nodes.
             'r':32,
             'l_build': 50,
             'alpha': 1.2,
             "saturate_graph": False,
+            "n_node": 0,
+            "n_node_from_gt": 0,
+            "n_pass": 1,
+            "l_search": 10,
+            "k_search": 10,
+            "dataset": Dataset.SIFT_1M # TODO: For now, this enum is used for title generation. But we should use this to conditionally build new index.
         },
+        { # only two pass.
+            'r':32,
+            'l_build': 50,
+            'alpha': 1.2,
+            "saturate_graph": False,
+            "n_node": 0,
+            "n_node_from_gt": 0,
+            "n_pass": 2,
+            "l_search": 10,
+            "k_search": 10,
+            "dataset": Dataset.SIFT_1M
+        },
+        # { # naive
+        #     'r':70,
+        #     'l_build': 75,
+        #     'alpha': 1.2,
+        #     "saturate_graph": False,
+        #     "n_node": 0,
+        #     "n_pass": 1,
+        #     "l_search": 50,
+        #     "k_search": 10,
+        #     "dataset": Dataset.SIFT_1M # TODO: For now, this enum is used for title generation. But we should use this to conditionally build new index.
+        # },
+        # { # only four nodes.
+        #     'r':70,
+        #     'l_build': 75,
+        #     'alpha': 1.2,
+        #     "saturate_graph": False,
+        #     "n_node": 4,
+        #     "n_pass": 1,
+        #     "l_search": 50,
+        #     "k_search": 50,
+        #     "dataset": Dataset.SIFT_1M # TODO: For now, this enum is used for title generation. But we should use this to conditionally build new index.
+        # },
+        # { # only two pass.
+        #     'r':70,
+        #     'l_build': 75,
+        #     'alpha': 1.2,
+        #     "saturate_graph": False,
+        #     "n_node": 0,
+        #     "n_pass": 2,
+        #     "l_search": 50,
+        #     "k_search": 50,
+        #     "dataset": Dataset.SIFT_1M
+        # },
+        # { # both.
+        #     'r':70,
+        #     'l_build': 75,
+        #     'alpha': 1.2,
+        #     "saturate_graph": False,
+        #     "n_node": 4,
+        #     "n_pass": 2,
+        #     "l_search": 50,
+        #     "k_search": 50,
+        #     "dataset": Dataset.SIFT_1M
+        # }
     ]
-    l = 100
 
     for experiment in experiments:
         r = experiment['r']
         alpha = experiment['alpha']
         l_build=experiment['l_build']
-        title = f"R{str(r)}_L{str(l_build)}_A{str(alpha).replace(".", '-')}{"_SAT" if experiment['saturate_graph'] else ""}"
+        n_node=experiment['n_node']
+        n_node_from_gt=experiment['n_node_from_gt']
+        n_pass=experiment['n_pass']
+        l_search = experiment['l_search']
+        dataset=experiment['dataset']
+        k_search=experiment['k_search']
 
-        experiment_folder = os.path.join(sift_folder, title)
+        # index title should not be bothered with L_Search.
+        # TODO: Vijay: Try saturating the graph. At least your edge utilization would be consistent.
+        index_title = f"dataset:{dataset}_r{str(r)}_lbuild{str(l_build)}_a{str(alpha).replace(".", '-')}{"_sat" if experiment['saturate_graph'] else ""}_nnodes{n_node}_nnodes_gt{n_node_from_gt}_npass{n_pass}"
+        # graph_title = f"{index_title}_ksearch{k_search}_lsearch{l_search}"
+        graph_title = f"N-Pass method, N={n_pass}"
+
+        experiment_folder = os.path.join(sift_folder, index_title)
         os.makedirs(experiment_folder, exist_ok=True)
 
         index_prefix = os.path.join(experiment_folder, "index")
         result_path = os.path.join(experiment_folder, "res")
-
 
         if not os.path.exists(index_prefix+".data"):
             cmd2 = [
@@ -200,12 +385,17 @@ if __name__ == "__main__":
                 "--data_path", base_file,
                 "--index_path_prefix", index_prefix,
                 "-R", str(r),
-                "--saturate_graph" if "saturate_graph" in experiment and experiment["saturate_graph"] else "",
+                "--saturate_graph" if experiment.get("saturate_graph", False) else "",
                 "-L", str(l_build),
                 "--alpha", str(alpha),
                 "--num_threads", "1",
-                "--tracking_addr", "NONE"
+                "--tracking_addr", "NONE", # [CSC 2525] New parameter introduced as part of our research.
+                "--n_node", str(n_node), # [CSC 2525] New parameter introduced as part of our research.
+                "--n_node_from_gt", str(n_node_from_gt), # [CSC 2525] New parameter introduced as part of our research.
+                "--n_pass", str(n_pass) # [CSC 2525] New parameter introduced as part of our research.
             ]
+
+            print(f"Executing: {' '.join(cmd2)}")
 
             result = subprocess.run(
                 cmd2,
@@ -215,7 +405,7 @@ if __name__ == "__main__":
             )
 
             if result.returncode != 0:
-                print(f"Error building index: {result.stderr}")
+                print(f"Error building index: stderr: {result.stderr}. stdout: {result.stdout}")
                 exit(1)
         else:
             print("Index exists")
@@ -229,8 +419,8 @@ if __name__ == "__main__":
                 "--index_path_prefix", index_prefix,
                 "--query_file", query_file,
                 "--gt_file", gt_file,
-                "-K", "10",
-                "-L", str(l),
+                "-K", str(k_search),
+                "-L", str(l_search),
                 "--result_path", result_path,
                 "--num_threads", "1",
                 "--tracking_addr", f"tcp://localhost:{tracking_port}"
@@ -253,6 +443,6 @@ if __name__ == "__main__":
                 "exit_code": process.returncode,
             }
 
-        tracker.trace_program(title, exec_func, tracking_port=tracking_port)
+        tracker.trace_program(graph_title, exec_func, tracking_port=tracking_port)
 
     tracker.generate_graphs()

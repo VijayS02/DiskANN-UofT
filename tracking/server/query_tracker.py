@@ -148,8 +148,6 @@ class RecallDistribution(FrequencyTracker, TextMetricTracker, AbstractQueryTrack
         # compute recall by checking how many of the ground truth results are in the best_k
         recall = len(set(gt_results).intersection(set(best_k))) / len(gt_results)
         self.add_data_point(recall)
-        if recall == 0:
-            print(f"Recall is 0 for query {self.queries}")
 
         self.queries += 1
         self.recall_vals.append(recall)
@@ -264,6 +262,47 @@ class KUsefulEdges(FrequencyTracker,TextMetricTracker, AbstractQueryTracker):
         return {"x": "Useful Edge Uses", "y": "Frequency", "title": "K-Useful Edge Use Distribution", "ylog": True }
 
 
+class DirectionalUsefulEdgeRatioDist(FrequencyTracker, TextMetricTracker, AbstractQueryTracker):
+    def __init__(self):
+        super().__init__("DirectionalUsefulEdgeRatio", bins=30, metrics=["visited_node"], label="Directional Useful Edge Ratio")
+        self.parents = dict()
+        self.edge_uses = defaultdict(int)
+        self.unused_edges = 0
+        self.unidirectional = 0
+
+    def handle_metric_event(self, metric_name, metric_data):
+        if not self.graph:
+            raise ValueError("Graph not set")
+
+        for child in self.graph[metric_data['nodeid']]:
+            if child not in self.parents:
+                self.parents[child] = metric_data['nodeid']
+        
+        if metric_data['nodeid'] in self.parents:
+            edge = (self.parents[metric_data['nodeid']], metric_data['nodeid'])
+            self.edge_uses[edge] += 1
+
+    def end_query(self, data):
+        self.parents.clear()
+
+    def end_experiment(self, title):
+        seen = set()
+        for edge, uses in self.edge_uses.items():
+            if edge in seen:
+                continue
+
+            inverted_edge = edge[::-1]
+            seen.add(inverted_edge)
+            if inverted_edge not in self.edge_uses:
+                self.unidirectional += 1
+            inv_uses = self.edge_uses.get(inverted_edge, 0)
+            ratio = max(inv_uses, uses) / (inv_uses + uses)
+            self.add_data_point(ratio)
+        self.end_experiment_graph(title)
+    
+    def get_graph_props(self):
+        return {"x": "Usage of one direction (%)", "y": "Frequency", "title": "Bidirectional edge usage ratio", 'ylog' : True}
+
 
 
 METRIC_LIST = [
@@ -275,7 +314,8 @@ METRIC_LIST = [
     DistancePerStepIndiv,
     RecallDistribution,
     UsefulEdgesDistribution,
-    KUsefulEdges
+    KUsefulEdges,
+    DirectionalUsefulEdgeRatioDist
 ]
 
 

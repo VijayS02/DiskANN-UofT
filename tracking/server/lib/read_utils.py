@@ -1,5 +1,6 @@
 import struct
 import csv
+import sys
 
 def load_graph_from_binary(filename):
     """Reads a binary graph file and reconstructs the adjacency list."""
@@ -97,3 +98,33 @@ def compare_graphs(graph1, graph2):
 
     if not missing_in_g1 and not missing_in_g2 and not any(added or removed for node in common_nodes):
         print("Graphs are identical.")
+
+def count_unidirectional_edges(graph):
+    """
+    Counts the number of unidirectional edges in the graph.
+    An edge u -> v is unidirectional if v -> u is not present.
+    """
+    unidirectional = 0
+    for u in graph:
+        for v in graph[u]:
+            if v not in graph or u not in graph[v]:
+                unidirectional += 1
+    return unidirectional
+
+if __name__ == "__main__":
+    if len(sys.argv) != 2:
+        print("Usage: python graph_utils.py <graph_file>")
+        sys.exit(1)
+
+    graph_file = sys.argv[1]
+
+    try:
+        graph = load_graph_from_binary(graph_file)
+        total_edges = sum(len(neighbors) for neighbors in graph.values())
+        unidirectional_edges = count_unidirectional_edges(graph)
+
+        print(f"Total edges: {total_edges}")
+        print(f"Unidirectional edges: {unidirectional_edges}")
+    except Exception as e:
+        print(f"Failed to load or analyze graph: {e}")
+        sys.exit(1)

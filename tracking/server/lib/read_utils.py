@@ -13,7 +13,6 @@ def load_graph_from_binary(filename):
             neighbors = list(struct.unpack(f"{degree}I", f.read(4 * degree)))
             graph[i] = neighbors  # Store in a dictionary
     
-    print(len(graph))
     return graph
 
 def count_edges_from_binary(filename):

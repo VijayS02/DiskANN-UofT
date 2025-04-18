@@ -8,3 +8,5 @@ flask_socketio
 tqdm
 msgpack
 psutil
+zstandard
+pyarrow

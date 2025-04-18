@@ -206,6 +206,9 @@ def construct_graph(index_name, base_file_name, r=32, l_build=50, alpha=1.2, sat
 
     tracker.trace_program(index_name, trace_function, tracking_port=tracking_port)
 
+    parquets = tracker.generate_parquet(index_path)
+
+
     # Create json file with data about index:
     with open(os.path.join(index_path, "index_info.json"), "w") as f:
         f.write(json.dumps({
@@ -216,14 +219,16 @@ def construct_graph(index_name, base_file_name, r=32, l_build=50, alpha=1.2, sat
             "alpha": alpha,
             "n": nodes,
             "dimensions": ndims,
+            "parquets": parquets,
             "edges": count_edges_from_binary(os.path.join(index_path, INDEX_PREFIX + "_graph.bin")),
             "saturate_graph": saturate_graph,
             "metrics": metrics,
             "output_types": tracker.generate_output_dict()
         }))
 
-    tracker.generate_graphs(index_path)
-    print("Graph construction complete!")
+
+    # tracker.generate_graphs(index_path)
+    # print("Graph construction complete!")
     return "Graph construction complete!"
 
 @stream_func
@@ -311,14 +316,16 @@ def trace_query(index_path, query_file_name, l=50, k=10, metrics=[]):
 
     ret = tracker.trace_program('query_run', exec_func, tracking_port=tracking_port)
     print(ret)
+
+    parquets = tracker.generate_parquet(result_path)
     
-    tracker.generate_json_graphs(os.path.join(result_path, "graphs.msgpack"))
+    # tracker.generate_json_graphs(os.path.join(result_path, "graphs.msgpack"))
 
-    tracker.generate_graphs(result_path)
+    # tracker.generate_graphs(result_path)
 
-    json_data = tracker.generate_json()
+    # json_data = tracker.generate_json()
 
-    tracker.generate_text()
+    # tracker.generate_text()
 
     
     # Create json file with data about query:
@@ -331,8 +338,8 @@ def trace_query(index_path, query_file_name, l=50, k=10, metrics=[]):
             "k": k,
             "n": nodes,
             "directory": result_path,
-            "data": json_data,
             "metrics": metrics,
+            "parquets": parquets,
             "time": int(datetime.now().timestamp()),
             "output_types": tracker.generate_output_dict(),
             "individual_types": tracker.generate_output_dict(single_query=True),

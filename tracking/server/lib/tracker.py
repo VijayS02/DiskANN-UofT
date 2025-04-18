@@ -11,6 +11,10 @@ from lib.abstract_trackers import AbstractConstructionTracker, AbstractMetricTra
 import threading
 from tqdm import tqdm 
 import msgpack
+import zstandard as zstd
+from collections import defaultdict
+import pandas as pd
+
 
 
 import matplotlib.pyplot as plt
@@ -42,6 +46,7 @@ class AbstractTrackingRunner:
         self.metric_handlers : Dict[str, List[AbstractMetricTracker]] = dict()
         self.stop_tracking = False
         self.message_queue = Queue()
+        self.grouped = defaultdict(list)
         for metric_handler in metric_handlers:
             for metric_name in metric_handler.get_subscribed_metrics():
                 self.metric_handlers.setdefault(metric_name, []).append(metric_handler)
@@ -125,6 +130,18 @@ class AbstractTrackingRunner:
 
         print(f"JSON graph data written to {filename}")
 
+    def generate_parquet(self, output_dir: str, compression: str = "zstd"):
+        """Write events to separate Parquet files per metric_name."""
+        os.makedirs(output_dir, exist_ok=True)
+
+        metrics = []
+        for metric, records in self.grouped.items():
+            df = pd.DataFrame(records)
+            metrics.append(metric)
+            filename = os.path.join(output_dir, f"{metric}.parquet")
+            df.to_parquet(filename, engine="pyarrow", compression=compression, index=False)
+            print(f"Wrote {len(records)} records to {filename}")
+        return metrics
 
     def end_experiment(self, title):
         for (tracker, metrics) in self.iterate_unique_trackers():
@@ -154,10 +171,22 @@ class AbstractTrackingRunner:
                         print("Invalid JSON format received, skipping...")
                 
                 print("Received shutdown signal, processing metrics...")
+                qid = 0
+                evtId = 0
                 msg_q_len = self.message_queue.qsize()
                 for _ in tqdm(range(msg_q_len)):
-                    data = json.loads(self.message_queue.get())
-                    self.handle_metric_event(data)
+                    event = json.loads(self.message_queue.get())
+                    # self.events.append(data)
+                    metric = event.get("metric_name", "unknown")
+                    
+                    metric_data = event.get("value", {})
+                    metric_data['qid'] = qid
+                    metric_data['evtId'] = evtId
+                    self.grouped[metric].append(metric_data)
+                    if metric == "end_query":
+                        qid += 1
+                    evtId += 1
+                    # self.handle_metric_event(data)
 
             except zmq.error.ZMQError as e:
                 print(f"Error in ZMQ server: {e}")

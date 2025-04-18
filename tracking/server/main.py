@@ -9,6 +9,7 @@ from config import SOCKETIO, PROJECT_ROOT, build_lock, BUILD_DIR, operation_lock
 from routes.file_routes import file_bp
 from routes.index_routes import index_bp
 from routes.query_routes import query_bp
+from routes.code_routes import code_bp
 
 from services import exec_build
 
@@ -68,6 +69,7 @@ def status():
 app.register_blueprint(file_bp)
 app.register_blueprint(index_bp)
 app.register_blueprint(query_bp)
+app.register_blueprint(code_bp)
 
 
 if __name__ == "__main__":

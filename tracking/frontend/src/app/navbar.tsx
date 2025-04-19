@@ -68,6 +68,9 @@ function Navbar() {
           <Button variant={"ghost"} size={"lg"} asChild>
             <Link href="/query">Query</Link>
           </Button>
+          <Button variant={"ghost"} size={"lg"} asChild>
+            <Link href="/code">Sandbox</Link>
+          </Button>
           <CreateBuild />
         </div>
       </div>

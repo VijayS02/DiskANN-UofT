@@ -140,14 +140,11 @@ function Graphs() {
   if (!availableGraphs.length || !selectedGraph) return null;
 
   return (
-    <div className="mt-2">
-      <div className="text-xl">Graphs</div>
-      <MultiGraphRenderer
-        graphIds={availableGraphs}
-        selectedGraph={selectedGraph}
-        setSelectedGraph={setSelectedGraph}
-      />
-    </div>
+    <MultiGraphRenderer
+      graphIds={availableGraphs}
+      selectedGraph={selectedGraph}
+      setSelectedGraph={setSelectedGraph}
+    />
   );
 }
 
@@ -172,7 +169,7 @@ function MultiGraphRenderer({
             <SelectContent>
               {graphIds.map((graphId) => (
                 <SelectItem key={graphId} value={graphId}>
-                  {graphId}
+                  {graphId.replace(".msgpack", "")}
                 </SelectItem>
               ))}
             </SelectContent>

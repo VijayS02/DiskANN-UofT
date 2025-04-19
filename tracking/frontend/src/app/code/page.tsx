@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { io } from "socket.io-client";
 import useFetch from "@/util";
 import { GraphMap } from "@/components/msgpackRender";
+import { Input } from "@/components/ui/input";
 
 import {
   Card,
@@ -66,9 +67,11 @@ export default function Page() {
     <div className="space-y-3">
       <div className="flex justify-between">
         <h1 className="text-2xl font-semibold">Python Sandbox</h1>
-        <Button size="sm" onClick={handleRunCode}>
-          Run Code
-        </Button>
+        <div className="flex">
+          <Button size="sm" onClick={handleRunCode}>
+            Run Code
+          </Button>
+        </div>
       </div>
 
       <div className="border-2 border-gray-300 rounded-md overflow-hidden">
@@ -91,6 +94,10 @@ export default function Page() {
           }}
         />
 
+        <div className="bg-[#1e1e1e] flex justify-end p-3">
+          <FileManager setCode={setCode} code={code} />
+        </div>
+
         <div className="bg-gray-900 text-white p-4 h-[20vh]">
           <div
             id="terminal"
@@ -101,6 +108,160 @@ export default function Page() {
       </div>
 
       <Graphs />
+    </div>
+  );
+}
+
+function FileManager({
+  setCode,
+  code,
+}: {
+  setCode: (v: string) => void;
+  code: string;
+}) {
+  const [selectedFile, setSelectedFile] = useState<string | null>(null);
+  const [newFileName, setNewFileName] = useState("");
+  const prevSaveRef = useRef<string>("");
+
+  const { data: fileList } = useFetch<string[]>(
+    "/code/code_file/list",
+    "GET",
+    undefined,
+    {
+      pollIntervalMs: 5000,
+    }
+  );
+
+  const { data: fileContent, fetchData: fetchFileContent } = useFetch<any>(
+    "/code/code_file/get",
+    "POST"
+  );
+
+  const {
+    loading,
+    error,
+    fetchData: sendSaveFile,
+  } = useFetch<any>("/code/code_file/save", "POST");
+
+  const { fetchData: sendCreateFile } = useFetch<any>(
+    "/code/code_file/create",
+    "POST"
+  );
+
+  const { fetchData: sendDeleteFile } = useFetch<any>(
+    "/code/code_file/delete",
+    "POST"
+  );
+
+  const saveRef = useRef<NodeJS.Timeout | null>(null);
+
+  // On file select → fetch contents
+  useEffect(() => {
+    if (!selectedFile) return;
+
+    fetchFileContent({ filename: selectedFile });
+  }, [selectedFile]);
+
+  // When fetched content updates, load into editor
+  useEffect(() => {
+    if (fileContent?.content !== undefined) {
+      setCode(fileContent.content);
+    }
+  }, [fileContent]);
+
+  // Auto-save every 5 seconds
+  useEffect(() => {
+    if (!selectedFile) return;
+
+    if (saveRef.current) clearInterval(saveRef.current);
+
+    // Set up autosave interval
+    saveRef.current = setInterval(() => {
+      if (code !== prevSaveRef.current) {
+        sendSaveFile({ filename: selectedFile, content: code });
+        prevSaveRef.current = code;
+      }
+    }, 3000); // every 5 seconds
+
+    return () => {
+      if (saveRef.current) {
+        clearInterval(saveRef.current);
+        saveRef.current = null;
+      }
+    };
+  }, [code, selectedFile]);
+
+  const createFile = async () => {
+    if (!newFileName.trim()) return;
+
+    sendCreateFile({ filename: newFileName });
+
+    setNewFileName("");
+    const normalized = newFileName.endsWith(".py")
+      ? newFileName
+      : `${newFileName}.py`;
+    setSelectedFile(normalized);
+  };
+
+  const deleteFile = async () => {
+    if (!selectedFile) return;
+
+    sendDeleteFile({ filename: selectedFile });
+
+    setSelectedFile(null);
+    setCode("");
+  };
+
+  const status = selectedFile
+    ? error
+      ? "Failed"
+      : loading
+      ? "Saving"
+      : prevSaveRef.current === code
+      ? "Saved"
+      : "Unsaved"
+    : "Unselected";
+
+  return (
+    <div className="flex gap-2 items-center mr-2">
+      <div
+        className={
+          (status === "Saved" ? " text-green-500" : "text-white") +
+          " text-xs capitalize"
+        }
+      >
+        {status}
+      </div>
+      <Select value={selectedFile || ""} onValueChange={setSelectedFile}>
+        <SelectTrigger className="w-[180px] bg-white">
+          <SelectValue placeholder="Choose file" />
+        </SelectTrigger>
+        <SelectContent className="z-[9999]">
+          {fileList?.map((file) => (
+            <SelectItem key={file} value={file}>
+              {file}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+
+      <Input
+        value={newFileName}
+        onChange={(e) => setNewFileName(e.target.value)}
+        placeholder="New file name"
+        className="w-40 bg-white"
+      />
+      <Button variant="outline" onClick={createFile}>
+        Create
+      </Button>
+
+      <Button
+        variant="destructive"
+        onClick={deleteFile}
+        disabled={!selectedFile}
+      >
+        Delete
+      </Button>
     </div>
   );
 }

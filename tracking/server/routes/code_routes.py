@@ -2,7 +2,7 @@ import numpy as np
 from flask import Blueprint, request, jsonify, send_file
 from services import stream_func
 import os 
-from config import RESULT_PATH, INDEX_DIR, INDEX_PREFIX, SOCKETIO, SANDBOX_GRAPHS
+from config import RESULT_PATH, INDEX_DIR, INDEX_PREFIX, SOCKETIO, SANDBOX_GRAPHS, SANDBOX_CODE
 import json
 import pandas as pd
 import msgpack
@@ -166,3 +166,77 @@ def exec_route():
 
     # Return immediately to frontend
     return jsonify({"status": "started"})
+
+@code_bp.route("/code_file/create", methods=["POST"])
+def create_code_file():
+    filename = request.json.get("filename", "")
+    if not filename.endswith(".py"):
+        filename += ".py"
+
+    file_path = os.path.join(SANDBOX_CODE, filename)
+    
+    if os.path.exists(file_path):
+        return jsonify({"error": "File already exists"}), 409
+    
+    with open(file_path, "w") as f:
+        f.write("# New Python file\n")
+
+    return jsonify({"status": "created", "filename": filename})
+
+
+@code_bp.route("/code_file/save", methods=["POST"])
+def save_code_file():
+    filename = request.json.get("filename", "")
+    content = request.json.get("content", "")
+
+    if not filename.endswith(".py"):
+        filename += ".py"
+    
+    file_path = os.path.join(SANDBOX_CODE, filename)
+
+    with open(file_path, "w") as f:
+        f.write(content)
+
+    return jsonify({"status": "saved", "filename": filename})
+
+
+@code_bp.route("/code_file/delete", methods=["POST"])
+def delete_code_file():
+    filename = request.json.get("filename", "")
+
+    if not filename.endswith(".py"):
+        filename += ".py"
+
+    file_path = os.path.join(SANDBOX_CODE, filename)
+
+    if not os.path.exists(file_path):
+        return jsonify({"error": "File does not exist"}), 404
+
+    os.remove(file_path)
+
+    return jsonify({"status": "deleted", "filename": filename})
+
+@code_bp.route("/code_file/list", methods=["GET"])
+def list_code_files():
+    files = [
+        f for f in os.listdir(SANDBOX_CODE)
+        if f.endswith(".py") and os.path.isfile(os.path.join(SANDBOX_CODE, f))
+    ]
+    return jsonify(files)
+
+@code_bp.route("/code_file/get", methods=["POST"])
+def get_code_file():
+    filename = request.json.get("filename", "")
+    
+    if not filename.endswith(".py"):
+        filename += ".py"
+
+    file_path = os.path.join(SANDBOX_CODE, filename)
+
+    if not os.path.exists(file_path):
+        return jsonify({"error": "File does not exist"}), 404
+
+    with open(file_path, "r") as f:
+        content = f.read()
+
+    return jsonify({"filename": filename, "content": content})

@@ -6,6 +6,7 @@ from flask_socketio import SocketIO
 SOCKETIO = SocketIO(cors_allowed_origins="*")
 load_dotenv()
 
+
 # Check if the environment variables are set
 if not os.getenv("DISK_ANN_ROOT"):
     raise ValueError("DISK_ANN_ROOT is not set")
@@ -24,10 +25,12 @@ SANDBOX_ROOT = os.path.join(STORAGE_ROOT, "sandbox")
 INDEX_PREFIX = "index"
 
 SANDBOX_GRAPHS = os.path.join(SANDBOX_ROOT, 'graphs')
+SANDBOX_CODE   = os.path.join(SANDBOX_ROOT, 'code')
 
 os.makedirs(STORAGE_ROOT, exist_ok=True)
 os.makedirs(SANDBOX_ROOT, exist_ok=True)
 os.makedirs(SANDBOX_GRAPHS, exist_ok=True)
+os.makedirs(SANDBOX_CODE, exist_ok=True)
 
 default_build = os.path.join(PROJECT_ROOT, "build", 'script_output')
 

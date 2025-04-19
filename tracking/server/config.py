@@ -20,9 +20,14 @@ UPLOADS_DIR = os.path.join(STORAGE_ROOT, "uploads")
 INDEX_DIR = os.path.join(STORAGE_ROOT, "indexes")
 GT_FILES = os.path.join(STORAGE_ROOT, "gt_files")
 RESULT_PATH = os.path.join(STORAGE_ROOT, "results")
+SANDBOX_ROOT = os.path.join(STORAGE_ROOT, "sandbox")
 INDEX_PREFIX = "index"
 
+SANDBOX_GRAPHS = os.path.join(SANDBOX_ROOT, 'graphs')
+
 os.makedirs(STORAGE_ROOT, exist_ok=True)
+os.makedirs(SANDBOX_ROOT, exist_ok=True)
+os.makedirs(SANDBOX_GRAPHS, exist_ok=True)
 
 default_build = os.path.join(PROJECT_ROOT, "build", 'script_output')
 

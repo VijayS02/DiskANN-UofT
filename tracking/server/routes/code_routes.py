@@ -1,13 +1,17 @@
+import numpy as np
 from flask import Blueprint, request, jsonify, send_file
 from services import stream_func
 import os 
-from config import RESULT_PATH, INDEX_DIR, INDEX_PREFIX
+from config import RESULT_PATH, INDEX_DIR, INDEX_PREFIX, SOCKETIO, SANDBOX_GRAPHS
 import json
 import pandas as pd
+import msgpack
+
 
 from lib.read_utils import load_graph_from_binary
+from lib.tracker import convert_numpy_to_python
 
-code_bp = Blueprint("code", __name__)
+code_bp = Blueprint("code", __name__, url_prefix='/code')
 
 
 class DataProvider():
@@ -68,19 +72,54 @@ class DataProvider():
 
 dp = DataProvider()
 
+def plot(filename, y, x=None, title="Plot"):
+
+    meta = {
+        "type": "line",
+        "props" : {"title": title},
+    }
+
+    if x is None:
+        x = np.arange(len(y))
+    
+    filename = filename.replace(".msgpack", "") + ".msgpack"
+    
+
+    graph_info = {"data": (x,y),  "meta": meta}
+    # Recursively convert all NumPy data before writing
+    data_serializable = convert_numpy_to_python(graph_info)
+
+    file_path = os.path.join(SANDBOX_GRAPHS, filename)
+    # Write using MessagePack
+    with open(file_path, "wb") as f:  # Use "wb" since msgpack writes binary data
+        f.write(msgpack.packb(data_serializable))
+    SOCKETIO.emit("new_graph", {"filename": filename})
+
+
+
 @stream_func
 def execute_user_code(code: str, data_provider):
     exec_globals = {
         "dpAPI": data_provider,
         "__builtins__": __builtins__,  # caution: restrict if needed
+        "plot": plot
     }
-    print("------------------   PYTHON   ------------------")
+    print(">>>Running python:")
     exec(code, exec_globals)
-    print("------------------ END PYTHON ------------------")
-
-    print("Execution done!")
     
+@code_bp.route("/graph/<path:filename>")
+def get_sandbox_graph(filename):
+    filename = filename.replace(".msgpack", "") + ".msgpack"
+    json_path = os.path.join(SANDBOX_GRAPHS, filename)
+    
+    if not os.path.exists(json_path):
+        return 404
+    
+    return send_file(json_path, mimetype="application/msgpack", as_attachment=False)
 
+@code_bp.route("/list_graphs")
+def list_sandbox_graphs():
+    return os.listdir(SANDBOX_GRAPHS)
 
 @code_bp.route('/exec', methods=['POST'])
 def exec_route():

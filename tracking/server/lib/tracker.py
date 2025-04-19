@@ -186,7 +186,7 @@ class AbstractTrackingRunner:
                     if metric == "end_query":
                         qid += 1
                     evtId += 1
-                    # self.handle_metric_event(data)
+                    self.handle_metric_event(event)
 
             except zmq.error.ZMQError as e:
                 print(f"Error in ZMQ server: {e}")

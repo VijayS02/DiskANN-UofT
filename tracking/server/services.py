@@ -227,8 +227,8 @@ def construct_graph(index_name, base_file_name, r=32, l_build=50, alpha=1.2, sat
         }))
 
 
-    # tracker.generate_graphs(index_path)
-    # print("Graph construction complete!")
+    tracker.generate_graphs(index_path)
+    print("Graph construction complete!")
     return "Graph construction complete!"
 
 @stream_func
@@ -319,13 +319,13 @@ def trace_query(index_path, query_file_name, l=50, k=10, metrics=[]):
 
     parquets = tracker.generate_parquet(result_path)
     
-    # tracker.generate_json_graphs(os.path.join(result_path, "graphs.msgpack"))
+    tracker.generate_json_graphs(os.path.join(result_path, "graphs.msgpack"))
 
-    # tracker.generate_graphs(result_path)
+    tracker.generate_graphs(result_path)
 
-    # json_data = tracker.generate_json()
+    json_data = tracker.generate_json()
 
-    # tracker.generate_text()
+    tracker.generate_text()
 
     
     # Create json file with data about query:
@@ -339,6 +339,7 @@ def trace_query(index_path, query_file_name, l=50, k=10, metrics=[]):
             "n": nodes,
             "directory": result_path,
             "metrics": metrics,
+            "data": json_data,
             "parquets": parquets,
             "time": int(datetime.now().timestamp()),
             "output_types": tracker.generate_output_dict(),

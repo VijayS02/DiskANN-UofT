@@ -69,6 +69,15 @@ class DataProvider():
         graph_file = os.path.join(index_dir, INDEX_PREFIX + "_graph.bin")
         graph = load_graph_from_binary(graph_file)
         return graph
+    
+    def get_latest_experiment(self):
+        exps = os.listdir(RESULT_PATH)
+        exps = [os.path.join(RESULT_PATH, result) for result in exps]
+        exps = [result for result in exps if os.path.exists(os.path.join(result, "query_info.json"))]
+        exps = [json.load(open(os.path.join(result, "query_info.json"))) for result in exps]
+        return sorted(exps, key=lambda x: x['time'])[-1]
+
+        
 
 dp = DataProvider()
 
@@ -95,14 +104,39 @@ def plot(filename, y, x=None, title="Plot"):
         f.write(msgpack.packb(data_serializable))
     SOCKETIO.emit("new_graph", {"filename": filename})
 
+def hist(filename, counts, title="Histogram"):
 
+    meta = {
+        "type": "hist",
+        "props" : {"title": title},
+    }
+    
+    filename = filename.replace(".msgpack", "") + ".msgpack"
+    
+
+    graph_info = {"data": counts,  "meta": meta}
+    # Recursively convert all NumPy data before writing
+    data_serializable = convert_numpy_to_python(graph_info)
+
+    file_path = os.path.join(SANDBOX_GRAPHS, filename)
+    # Write using MessagePack
+    with open(file_path, "wb") as f:  # Use "wb" since msgpack writes binary data
+        f.write(msgpack.packb(data_serializable))
+    SOCKETIO.emit("new_graph", {"filename": filename})
+
+
+
+api = {
+    "plot": plot,
+    "hist": hist
+}
 
 @stream_func
 def execute_user_code(code: str, data_provider):
     exec_globals = {
         "dpAPI": data_provider,
         "__builtins__": __builtins__,  # caution: restrict if needed
-        "plot": plot
+        **api
     }
     print(">>>Running python:")
     exec(code, exec_globals)

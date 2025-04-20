@@ -2,17 +2,19 @@ import struct
 import csv
 import sys
 
+import numpy as np
+
 def load_graph_from_binary(filename):
-    """Reads a binary graph file and reconstructs the adjacency list."""
+    """Reads a binary graph file and reconstructs the adjacency list using NumPy arrays."""
     with open(filename, "rb") as f:
         num_nodes = struct.unpack("I", f.read(4))[0]
         
-        graph = {}  # Change from list to dict
+        graph = {}
         for i in range(num_nodes):
             degree = struct.unpack("I", f.read(4))[0]
-            neighbors = list(struct.unpack(f"{degree}I", f.read(4 * degree)))
-            graph[i] = neighbors  # Store in a dictionary
-    
+            neighbors = np.frombuffer(f.read(4 * degree), dtype=np.uint32)
+            graph[i] = neighbors  # Store each neighbor list as a NumPy array
+
     return graph
 
 def count_edges_from_binary(filename):
@@ -50,6 +52,29 @@ def get_bin_file_info(filename):
         # Read first 8 bytes: [4 bytes for npts] + [4 bytes for ndims]
         npts, ndims = struct.unpack("ii", f.read(8))  # Read two int32 values
         return npts, ndims
+    
+def load_bin_to_numpy(filename: str, dtype=np.float32) -> np.ndarray:
+    """
+    Loads all vectors from a binary file written in [npts, ndims, vectors] format.
+
+    Args:
+        filename (str): Path to the binary file.
+        dtype (np.dtype): Data type of vectors (np.float32, np.int8, np.uint8)
+
+    Returns:
+        np.ndarray: Array of shape (npts, ndims)
+    """
+    with open(filename, "rb") as f:
+        # Read header: first two uint32 values
+        npts, ndims = struct.unpack("II", f.read(8))  # Unsigned ints
+
+        # Read remaining data into flat buffer
+        vector_data = f.read(npts * ndims * np.dtype(dtype).itemsize)
+
+        # Interpret as flat array and reshape
+        vectors = np.frombuffer(vector_data, dtype=dtype).reshape((npts, ndims))
+
+    return vectors
 
 def load_graph_from_csv(filename):
     """Reads a CSV file and returns a graph as an adjacency list (dict[int, list[int]])."""

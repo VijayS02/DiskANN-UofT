@@ -2,16 +2,44 @@ import numpy as np
 from flask import Blueprint, request, jsonify, send_file
 from services import stream_func
 import os 
-from config import RESULT_PATH, INDEX_DIR, INDEX_PREFIX, SOCKETIO, SANDBOX_GRAPHS, SANDBOX_CODE
+from config import RESULT_PATH, INDEX_DIR, INDEX_PREFIX, SOCKETIO, SANDBOX_GRAPHS, SANDBOX_CODE, UPLOADS_DIR
 import json
 import pandas as pd
 import msgpack
+import msgpack_numpy as m
+import heapq
+from tqdm import tqdm
+
+m.patch()
 
 
-from lib.read_utils import load_graph_from_binary
+
+from lib.read_utils import load_bin_to_numpy, load_graph_from_binary
 from lib.tracker import convert_numpy_to_python
 
 code_bp = Blueprint("code", __name__, url_prefix='/code')
+
+def compute_dist(v1, v2):
+    return np.sum((v1 - v2) ** 2)
+
+
+def extract_edges_simple(visited_order, graph):
+    seen = set([visited_order[0]])
+    parents = {}  # child -> parent
+    edges = []
+
+    for node in visited_order:
+        for neighbor in graph.get(node, []):
+            if neighbor not in seen:
+                seen.add(neighbor)
+                parents[neighbor] = node
+        
+        parent = parents.get(node, -1)
+        edges.append((parent, node))
+
+    return edges[1:]
+
+
 
 
 class DataProvider():
@@ -77,7 +105,55 @@ class DataProvider():
         exps = [json.load(open(os.path.join(result, "query_info.json"))) for result in exps]
         return sorted(exps, key=lambda x: x['time'])[-1]
 
-        
+    def load_query_vectors(self, experiment_id):
+        exp_folder = os.path.join(RESULT_PATH, experiment_id)
+        if not os.path.exists(exp_folder):
+            raise ValueError("Experiment does not exist")
+        exp_info = json.load(open(os.path.join(exp_folder, "query_info.json")))
+        file = exp_info['query_file']
+        query_path = os.path.join(UPLOADS_DIR, file)
+        if not os.path.exists(query_path):
+            raise RuntimeError("Cannot find query file")
+        return load_bin_to_numpy(query_path)
+
+    def get_used_edges(self, experiment_id):
+        exp = self.get_experiment(experiment_id)
+        exp_folder = os.path.join(RESULT_PATH, experiment_id)
+        os.makedirs(exp_folder, exist_ok=True)
+
+        used_edges_file = os.path.join(exp_folder, "used_edges.parquet")
+
+        # Load if already computed
+        if os.path.exists(used_edges_file):
+            print("Loading precomputed used edges")
+            return pd.read_parquet(used_edges_file)
+
+        visited_df = self.load_query_metric(experiment_id, 'visited_node')
+        graph = self.get_graph(exp['index_name'])
+
+        all_edges = []
+
+        for qid, group in tqdm(visited_df.groupby("qid", sort=True), desc="Computing used edges"):
+            edges = extract_edges_simple(group['nodeid'].to_numpy(dtype=np.uint32), graph)
+            for parent, node in edges:
+                all_edges.append((parent, node, qid))
+
+        df = pd.DataFrame(all_edges, columns=["parent", "node", "qid"])
+        df.to_parquet(used_edges_file, index=False)
+        print("Stored used edges to disk as parquet")
+
+        return df
+
+    def load_index_vectors(self, index_name):
+        index_dir = os.path.join(INDEX_DIR, index_name)
+        if not os.path.exists(index_dir):
+            raise ValueError("Index does not exist")
+        index_info = json.load(open(os.path.join(index_dir, "index_info.json")))
+        index_file = index_info['base_file']
+        base_path = os.path.join(UPLOADS_DIR, index_file)
+        if not os.path.exists(base_path):
+            raise RuntimeError("Cannot find base file")
+        return load_bin_to_numpy(base_path)
 
 dp = DataProvider()
 
@@ -104,11 +180,11 @@ def plot(filename, y, x=None, title="Plot"):
         f.write(msgpack.packb(data_serializable))
     SOCKETIO.emit("new_graph", {"filename": filename})
 
-def hist(filename, counts, title="Histogram"):
+def hist(filename, counts, title="Histogram", ylog=False):
 
     meta = {
         "type": "hist",
-        "props" : {"title": title},
+        "props" : {"title": title, "ylog":ylog},
     }
     
     filename = filename.replace(".msgpack", "") + ".msgpack"

@@ -10,3 +10,4 @@ msgpack
 psutil
 zstandard
 pyarrow
+msgpack_numpy

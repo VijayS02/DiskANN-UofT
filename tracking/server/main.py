@@ -36,11 +36,19 @@ def run_build():
 
 @app.route("/status")
 def status():
+    mem = psutil.virtual_memory()
+    used_non_cache = mem.used - mem.buffers - mem.cached
+
     stats = {
                 "device_stats": 
                 {
                     "cpu_percent": psutil.cpu_percent(interval=0.5),
-                    "memory": psutil.virtual_memory()._asdict(),
+                    "memory": {
+                        "total": mem.total,
+                        "available": mem.available,
+                        "used_actual": used_non_cache,  # apps-only used memory
+                        "percent": round((used_non_cache / mem.total) * 100, 2),
+                    },
                 }
             }
 

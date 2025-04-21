@@ -350,4 +350,103 @@ def trace_query(index_path, query_file_name, l=50, k=10, metrics=[]):
     print("Query complete!")
     return "Query complete!"
 
+@stream_func
+def split_file(base_file, output1, output2, percentage):
 
+        if percentage >= 100 or percentage <= 0:
+            raise ValueError("Percentage must be between 0 and 100")
+        
+        percentage = str(percentage)
+
+        if not os.path.exists(base_file):
+            raise FileNotFoundError
+        
+        split_bin = os.path.join(BUILD_DIR, "apps", 'utils', "split_bin")
+        print(split_bin)
+        command = [
+                    split_bin,
+                    "float",
+                    base_file,
+                    output1,
+                    output2,
+                    percentage
+                ]
+        
+        process = subprocess.Popen(
+                command,
+                stdout=subprocess.PIPE, 
+                stderr=subprocess.PIPE,
+                text=True,
+            )
+
+        for line in process.stdout:
+            sys.stdout.write(line)  # Write to WebSocket (via stdout redirection)
+            sys.stdout.flush()
+
+        for line in process.stderr:
+            sys.stderr.write(line)  # Write stderr to WebSocket
+            sys.stderr.flush()
+
+        # Wait for completion
+        process.wait()
+
+        time.sleep(1)
+
+        return 0
+
+@stream_func
+def perform_fvecs_to_fbin(exec, input_path, output_path, dtype="float"):
+        process = subprocess.Popen(
+                        [exec, dtype, input_path, output_path],
+                        stdout=subprocess.PIPE, 
+                        stderr=subprocess.PIPE,
+                        text=True,
+                    )
+        for line in process.stdout:
+            sys.stdout.write(line) 
+            sys.stdout.flush()
+
+        for line in process.stderr:
+            sys.stderr.write(line)
+            sys.stderr.flush()
+
+        process.wait()
+
+        time.sleep(1)
+
+        if process.returncode != 0:
+            raise Exception("Error computing ground truth")
+
+
+@stream_func
+def perform_generate_vectors(exec, dtype, output_path, ndims, npts, norm, rand_scaling):
+    args = [
+        exec,
+        '--data_type', dtype,
+        '--output_file', output_path,
+        '-D', ndims,
+        '-N', npts,
+        '--norm', norm,
+        '--rand_scaling', rand_scaling
+    ]
+
+    process = subprocess.Popen(
+        args,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True
+    )
+
+    for line in process.stdout:
+        sys.stdout.write(line)
+        sys.stdout.flush()
+
+    for line in process.stderr:
+        sys.stderr.write(line)
+        sys.stderr.flush()
+
+    process.wait()
+    time.sleep(1)
+
+    if process.returncode != 0:
+        raise Exception("Error generating random vectors")

@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify, send_file
 import os
-from services import stream_func
+from services import perform_fvecs_to_fbin, perform_generate_vectors, split_file
 from config import UPLOADS_DIR, BUILD_DIR
 import mimetypes
 from datetime import datetime
@@ -68,28 +68,6 @@ def delete_file():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@stream_func
-def perform_fvecs_to_fbin(exec, input_path, output_path, dtype="float"):
-        process = subprocess.Popen(
-                        [exec, dtype, input_path, output_path],
-                        stdout=subprocess.PIPE, 
-                        stderr=subprocess.PIPE,
-                        text=True,
-                    )
-        for line in process.stdout:
-            sys.stdout.write(line) 
-            sys.stdout.flush()
-
-        for line in process.stderr:
-            sys.stderr.write(line)
-            sys.stderr.flush()
-
-        process.wait()
-
-        time.sleep(1)
-
-        if process.returncode != 0:
-            raise Exception("Error computing ground truth")
 
 
 @file_bp.route('/uploads/fvecs_to_fbin', methods=['post'])
@@ -116,6 +94,39 @@ def fvecs_to_fbin():
         "message": "Conversion Initiated",
         "output_path": output_path,
     }), 200
+
+@file_bp.route('/uploads/split_file', methods=['post'])
+def handle_split_file():
+    data = request.get_json()
+    required_fields = ['base_file', 'output1', 'output2', 'percentage']
+    missing_fields = [field for field in required_fields if field not in data]
+    if missing_fields:
+        return jsonify({"error": f"Missing required fields: {', '.join(missing_fields)}"}), 400
+    base_file = str(data['base_file'] + ".fbin")
+    output1 = str(data['output1'] + ".fbin")
+    output2 = str(data['output2'] + ".fbin")
+    percentage = data['percentage']
+
+    base_file = os.path.join(UPLOADS_DIR, base_file)
+    output1 = os.path.join(UPLOADS_DIR, output1)
+    output2 = os.path.join(UPLOADS_DIR, output2)
+
+    try:
+        split_file(
+            base_file,
+            output1,
+            output2,
+            percentage
+        )
+
+        return jsonify({
+                    "message": "Split Initiated",
+                }), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+                        
 
 @file_bp.route('/uploads/generate_random_vectors', methods=['post'])
 def generate_random_vectors():
@@ -155,35 +166,3 @@ def generate_random_vectors():
         return jsonify({"error": str(e)}), 500
 
 
-@stream_func
-def perform_generate_vectors(exec, dtype, output_path, ndims, npts, norm, rand_scaling):
-    args = [
-        exec,
-        '--data_type', dtype,
-        '--output_file', output_path,
-        '-D', ndims,
-        '-N', npts,
-        '--norm', norm,
-        '--rand_scaling', rand_scaling
-    ]
-
-    process = subprocess.Popen(
-        args,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        text=True
-    )
-
-    for line in process.stdout:
-        sys.stdout.write(line)
-        sys.stdout.flush()
-
-    for line in process.stderr:
-        sys.stderr.write(line)
-        sys.stderr.flush()
-
-    process.wait()
-    time.sleep(1)
-
-    if process.returncode != 0:
-        raise Exception("Error generating random vectors")

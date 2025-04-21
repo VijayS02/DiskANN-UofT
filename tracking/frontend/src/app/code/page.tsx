@@ -345,9 +345,7 @@ function MultiGraphRenderer({
 }
 
 function RenderGraph({ graphId }: { graphId: string }) {
-  const { data } = useFetch<any>(`/code/graph/${graphId}`, "GET", undefined, {
-    pollIntervalMs: 3000,
-  });
+  const { data } = useFetch<any>(`/code/graph/${graphId}`);
 
   if (!data) return null;
 

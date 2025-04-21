@@ -27,6 +27,17 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  AlertDialog,
+  AlertDialogTrigger,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogCancel,
+  AlertDialogAction,
+} from "@/components/ui/alert-dialog";
 import { ArrowLeftRight, Trash } from "lucide-react";
 import { Tooltip, TooltipTrigger } from "@/components/ui/tooltip";
 import { TooltipContent, TooltipProvider } from "@radix-ui/react-tooltip";
@@ -174,46 +185,57 @@ function ListUploads() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {data?.files?.map((file: FileData) => (
-                <TableRow key={file.filename}>
-                  <TableCell className="font-medium">{file.filename}</TableCell>
-                  <TableCell>{formatSize(file.size_bytes)}</TableCell>
-                  <TableCell>{file.mime_type}</TableCell>
-                  <TableCell className="text-right">
-                    {new Date(file.modified).toLocaleString()}
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex justify-end space-x-2">
-                      {file.filename.endsWith(".fvecs") && (
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              disabled={isConverting}
-                              onClick={(e) => {
-                                fvecsToFbin({ filename: file.filename });
-                              }}
-                            >
-                              <ArrowLeftRight />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent className="bg-white shadow rounded p-2">
-                            Convert to .fbin
-                          </TooltipContent>
-                        </Tooltip>
-                      )}
-                      <Button
-                        disabled={isDeleting}
-                        onClick={(e) => {
-                          handleDeleteFile(file.filename);
-                        }}
-                        variant={"destructive"}
-                      >
-                        <Trash />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
+              {data?.files
+                ?.sort(
+                  (a: FileData, b: FileData) =>
+                    new Date(b.modified).getTime() -
+                    new Date(a.modified).getTime()
+                )
+                .map((file: FileData) => (
+                  <TableRow key={file.filename}>
+                    <TableCell className="font-medium">
+                      {file.filename}
+                    </TableCell>
+                    <TableCell>{formatSize(file.size_bytes)}</TableCell>
+                    <TableCell>{file.mime_type}</TableCell>
+                    <TableCell className="text-right">
+                      {new Date(file.modified).toLocaleString()}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex justify-end space-x-2">
+                        {file.filename.endsWith(".fbin") && (
+                          <SplitFile filename={file.filename} />
+                        )}
+                        {file.filename.endsWith(".fvecs") && (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                disabled={isConverting}
+                                onClick={(e) => {
+                                  fvecsToFbin({ filename: file.filename });
+                                }}
+                              >
+                                <ArrowLeftRight />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent className="bg-white shadow rounded p-2">
+                              Convert to .fbin
+                            </TooltipContent>
+                          </Tooltip>
+                        )}
+                        <Button
+                          disabled={isDeleting}
+                          onClick={(e) => {
+                            handleDeleteFile(file.filename);
+                          }}
+                          variant={"destructive"}
+                        >
+                          <Trash />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
             </TableBody>
             {data?.files?.length > 0 && (
               <TableFooter>
@@ -229,6 +251,80 @@ function ListUploads() {
         </TooltipProvider>
       </CardContent>
     </Card>
+  );
+}
+
+export function SplitFile({ filename }: { filename: string }) {
+  const [output1, setOutput1] = useState("output1.fbin");
+  const [output2, setOutput2] = useState("output2.fbin");
+  const [percentage, setPercentage] = useState(50);
+
+  const {
+    data,
+    error,
+    loading,
+    fetchData: splitFile,
+  } = useFetch<any>("/uploads/split_file", "POST");
+
+  const handleConfirm = () => {
+    splitFile({
+      base_file: filename.replace(/\.bin$|\.fbin$/g, ""),
+      output1: output1.replace(/\.bin$|\.fbin$/g, ""),
+      output2: output2.replace(/\.bin$|\.fbin$/g, ""),
+      percentage: percentage,
+    });
+  };
+
+  return (
+    <AlertDialog>
+      <AlertDialogTrigger asChild>
+        <Button variant="outline">Split File</Button>
+      </AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Split File</AlertDialogTitle>
+          <AlertDialogDescription>
+            This will split <strong>{filename}</strong> into two files with a{" "}
+            {percentage}%/{100 - percentage}% split.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+
+        <div className="space-y-2 py-2">
+          <Input
+            value={output1}
+            onChange={(e) => setOutput1(e.target.value)}
+            placeholder="Output File 1"
+          />
+          <Input
+            value={output2}
+            onChange={(e) => setOutput2(e.target.value)}
+            placeholder="Output File 2"
+          />
+          <Input
+            type="number"
+            value={percentage}
+            onChange={(e) => setPercentage(parseInt(e.target.value))}
+            min={1}
+            max={99}
+            placeholder="Percentage for Output 1"
+          />
+        </div>
+
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogAction onClick={handleConfirm} disabled={loading}>
+            {loading ? "Splitting..." : "Confirm"}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+
+        {data && (
+          <div className="text-green-600 text-sm pt-2">Split complete!</div>
+        )}
+        {error && (
+          <div className="text-red-600 text-sm pt-2">Error: {error}</div>
+        )}
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }
 

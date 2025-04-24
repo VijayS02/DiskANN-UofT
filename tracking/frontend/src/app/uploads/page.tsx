@@ -39,6 +39,7 @@ import {
   AlertDialogAction,
 } from "@/components/ui/alert-dialog";
 import { ArrowLeftRight, Trash } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 import { Tooltip, TooltipTrigger } from "@/components/ui/tooltip";
 import { TooltipContent, TooltipProvider } from "@radix-ui/react-tooltip";
 import GenerateRandomVectorsForm from "./generateDataForm";
@@ -204,7 +205,10 @@ function ListUploads() {
                     <TableCell>
                       <div className="flex justify-end space-x-2">
                         {file.filename.endsWith(".fbin") && (
-                          <SplitFile filename={file.filename} />
+                          <>
+                            <SplitFile filename={file.filename} />
+                            <AddNoiseButton filename={file.filename} />
+                          </>
                         )}
                         {file.filename.endsWith(".fvecs") && (
                           <Tooltip>
@@ -319,6 +323,85 @@ export function SplitFile({ filename }: { filename: string }) {
 
         {data && (
           <div className="text-green-600 text-sm pt-2">Split complete!</div>
+        )}
+        {error && (
+          <div className="text-red-600 text-sm pt-2">Error: {error}</div>
+        )}
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+}
+
+function AddNoiseButton({ filename }: { filename: string }) {
+  const [output, setOutput] = useState("noisy_output.fbin");
+  const [noiseScale, setNoiseScale] = useState(0.05);
+  const [normalize, setNormalize] = useState(false);
+
+  const {
+    data,
+    error,
+    loading,
+    fetchData: addNoise,
+  } = useFetch<any>("/uploads/add_noise", "POST");
+
+  const handleConfirm = () => {
+    addNoise({
+      base_file: filename.replace(/\.bin$|\.fbin$/g, ""),
+      output: output.replace(/\.bin$|\.fbin$/g, ""),
+      noise_scale: noiseScale,
+      normalize: normalize ? 1 : 0,
+    });
+  };
+
+  return (
+    <AlertDialog>
+      <AlertDialogTrigger asChild>
+        <Button variant="outline">Add Noise</Button>
+      </AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Add Noise</AlertDialogTitle>
+          <AlertDialogDescription>
+            This will add {Math.round(noiseScale * 100)}% Gaussian noise to{" "}
+            <strong>{filename}</strong> and save to <strong>{output}</strong>.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+
+        <div className="space-y-2 py-2">
+          <Input
+            value={output}
+            onChange={(e) => setOutput(e.target.value)}
+            placeholder="Output filename"
+          />
+          <Input
+            type="number"
+            step="0.01"
+            min="0"
+            max="1"
+            value={noiseScale}
+            onChange={(e) => setNoiseScale(parseFloat(e.target.value))}
+            placeholder="Noise scale (0.0 - 1.0)"
+          />
+          <div className="flex items-center space-x-2">
+            <Switch
+              checked={normalize}
+              onCheckedChange={(val) => setNormalize(val)}
+            />
+            <span>Normalize vectors</span>
+          </div>
+        </div>
+
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogAction onClick={handleConfirm} disabled={loading}>
+            {loading ? "Processing..." : "Confirm"}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+
+        {data && (
+          <div className="text-green-600 text-sm pt-2">
+            Noise added successfully!
+          </div>
         )}
         {error && (
           <div className="text-red-600 text-sm pt-2">Error: {error}</div>

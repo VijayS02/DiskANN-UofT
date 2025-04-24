@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify, send_file
 import os
-from services import perform_fvecs_to_fbin, perform_generate_vectors, split_file
+from services import perform_fvecs_to_fbin, perform_generate_vectors, split_file, add_noise
 from config import UPLOADS_DIR, BUILD_DIR
 import mimetypes
 from datetime import datetime
@@ -166,3 +166,30 @@ def generate_random_vectors():
         return jsonify({"error": str(e)}), 500
 
 
+@file_bp.route('/uploads/add_noise', methods=['post'])
+def handle_add_noise():
+    data = request.get_json()
+    required_fields = ['base_file', 'output', 'noise_scale']
+    missing_fields = [field for field in required_fields if field not in data]
+    if missing_fields:
+        return jsonify({"error": f"Missing required fields: {', '.join(missing_fields)}"}), 400
+    
+    base_file = str(data['base_file'] + ".fbin")
+    output1 = str(data['output'] + ".fbin")
+
+    base_file = os.path.join(UPLOADS_DIR, base_file)
+    output1 = os.path.join(UPLOADS_DIR, output1)
+
+    try:
+        add_noise(
+            base_file,
+            output1,
+            data['noise_scale'],
+            normalize=data.get('normalize', 0)
+        )
+
+        return jsonify({
+                    "message": "Add noise Initiated",
+                }), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500

@@ -41,7 +41,6 @@ def extract_edges_simple(visited_order, graph):
 
 
 
-
 class DataProvider():
     def list_experiments(self):
         if not os.path.exists(RESULT_PATH):
@@ -105,16 +104,21 @@ class DataProvider():
         exps = [json.load(open(os.path.join(result, "query_info.json"))) for result in exps]
         return sorted(exps, key=lambda x: x['time'])[-1]
 
+
+    def load_vectors_bin(self, filename):
+        filepath = os.path.join(UPLOADS_DIR, filename)
+        if not os.path.exists(filepath):
+            raise RuntimeError("Cannot find file to load")
+        return load_bin_to_numpy(filepath)
+
     def load_query_vectors(self, experiment_id):
         exp_folder = os.path.join(RESULT_PATH, experiment_id)
         if not os.path.exists(exp_folder):
             raise ValueError("Experiment does not exist")
         exp_info = json.load(open(os.path.join(exp_folder, "query_info.json")))
         file = exp_info['query_file']
-        query_path = os.path.join(UPLOADS_DIR, file)
-        if not os.path.exists(query_path):
-            raise RuntimeError("Cannot find query file")
-        return load_bin_to_numpy(query_path)
+        return self.load_vectors_bin(file)
+        
 
     def get_used_edges(self, experiment_id):
         exp = self.get_experiment(experiment_id)
@@ -150,10 +154,7 @@ class DataProvider():
             raise ValueError("Index does not exist")
         index_info = json.load(open(os.path.join(index_dir, "index_info.json")))
         index_file = index_info['base_file']
-        base_path = os.path.join(UPLOADS_DIR, index_file)
-        if not os.path.exists(base_path):
-            raise RuntimeError("Cannot find base file")
-        return load_bin_to_numpy(base_path)
+        return self.load_vectors_bin(index_file)
 
 dp = DataProvider()
 

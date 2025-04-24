@@ -147,6 +147,21 @@ class AbstractTrackingRunner:
         for (tracker, metrics) in self.iterate_unique_trackers():
             tracker.end_experiment(title)
 
+    
+    def process_message_queue(self):
+        evtId = 0
+        msg_q_len = self.message_queue.qsize()
+        for _ in tqdm(range(msg_q_len)):
+            event = json.loads(self.message_queue.get())
+            metric = event.get("metric_name", "unknown")
+            metric_data = event.get("value", {})
+            if type(metric_data) != dict:
+                metric_data = {"value": metric_data}
+            metric_data['evtId'] = evtId
+            self.grouped[metric].append(metric_data)
+            evtId += 1
+            self.handle_metric_event(event)
+
     def start_tracking_server(self, port=5556):
         """Start a ZMQ server in a separate thread to collect metrics"""
         self.stop_tracking = False
@@ -171,22 +186,7 @@ class AbstractTrackingRunner:
                         print("Invalid JSON format received, skipping...")
                 
                 print("Received shutdown signal, processing metrics...")
-                qid = 0
-                evtId = 0
-                msg_q_len = self.message_queue.qsize()
-                for _ in tqdm(range(msg_q_len)):
-                    event = json.loads(self.message_queue.get())
-                    # self.events.append(data)
-                    metric = event.get("metric_name", "unknown")
-                    
-                    metric_data = event.get("value", {})
-                    metric_data['qid'] = qid
-                    metric_data['evtId'] = evtId
-                    self.grouped[metric].append(metric_data)
-                    if metric == "end_query":
-                        qid += 1
-                    evtId += 1
-                    self.handle_metric_event(event)
+                self.process_message_queue()
 
             except zmq.error.ZMQError as e:
                 print(f"Error in ZMQ server: {e}")
@@ -277,6 +277,23 @@ class QueryTrackerRunner(AbstractTrackingRunner):
         for (tracker, _) in self.iterate_unique_trackers():
             tracker.set_graph(graph)
             tracker.set_index_info(index_info)
+
+    
+    def process_message_queue(self):
+        qid = 0
+        evtId = 0
+        msg_q_len = self.message_queue.qsize()
+        for _ in tqdm(range(msg_q_len)):
+            event = json.loads(self.message_queue.get())
+            metric = event.get("metric_name", "unknown")
+            metric_data = event.get("value", {})
+            metric_data['qid'] = qid
+            metric_data['evtId'] = evtId
+            self.grouped[metric].append(metric_data)
+            if metric == "end_query":
+                qid += 1
+            evtId += 1
+            self.handle_metric_event(event)
 
     def handle_metric_event(self, data):
         metric_name = data["metric_name"]

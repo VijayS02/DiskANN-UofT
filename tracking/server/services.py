@@ -450,3 +450,48 @@ def perform_generate_vectors(exec, dtype, output_path, ndims, npts, norm, rand_s
 
     if process.returncode != 0:
         raise Exception("Error generating random vectors")
+    
+
+@stream_func
+def add_noise(base_file, output, noise_scale, normalize=True):
+
+        noise_scale = str(noise_scale)
+        
+        if normalize:
+            normalize = "1"
+        else:
+            normalize = "0"
+
+        if not os.path.exists(base_file):
+            raise FileNotFoundError
+        
+        add_noise_to_bin = os.path.join(BUILD_DIR, "apps", 'utils', "add_noise_to_bin")
+        command = [
+                    add_noise_to_bin,
+                    base_file,
+                    output,
+                    noise_scale,
+                    normalize
+                ]
+        
+        process = subprocess.Popen(
+                command,
+                stdout=subprocess.PIPE, 
+                stderr=subprocess.PIPE,
+                text=True,
+            )
+
+        for line in process.stdout:
+            sys.stdout.write(line)  # Write to WebSocket (via stdout redirection)
+            sys.stdout.flush()
+
+        for line in process.stderr:
+            sys.stderr.write(line)  # Write stderr to WebSocket
+            sys.stderr.flush()
+
+        # Wait for completion
+        process.wait()
+
+        time.sleep(1)
+
+        return 0

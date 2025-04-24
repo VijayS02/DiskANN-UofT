@@ -38,6 +38,9 @@ target_link_libraries(uint32_to_uint8 ${PROJECT_NAME})
 add_executable(split_bin split_bin.cpp)
 target_link_libraries(split_bin ${PROJECT_NAME})
 
+add_executable(add_noise_to_bin add_noise_to_bin.cpp)
+target_link_libraries(add_noise_to_bin ${PROJECT_NAME})
+
 add_executable(vector_analysis vector_analysis.cpp)
 target_link_libraries(vector_analysis ${PROJECT_NAME} ${DISKANN_TOOLS_TCMALLOC_LINK_OPTIONS})
 

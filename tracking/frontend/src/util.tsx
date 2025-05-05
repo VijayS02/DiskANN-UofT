@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 const msgpack = require("msgpack-lite");
 
 type FetchMethod = "GET" | "POST";
@@ -48,9 +48,12 @@ const useFetch = <T,>(
   const [error, setError] = useState<string | null>(null);
   const [postData, setPostData] = useState<unknown | null>(initialPostData);
 
+  // Store the latest data reference without causing re-renders
+  const dataRef = useRef<T | null>(null);
+
   const fetchData = useCallback(
     async (newPostData?: unknown) => {
-      if (data === null) {
+      if (dataRef.current === null) {
         console.log("No data!");
         setLoading(true);
       }
@@ -81,8 +84,10 @@ const useFetch = <T,>(
             if (xhr.status >= 200 && xhr.status < 300) {
               try {
                 const response = JSON.parse(xhr.responseText);
+                dataRef.current = response;
                 setData(response);
               } catch {
+                dataRef.current = null;
                 setData(null);
               }
             } else {
@@ -127,7 +132,10 @@ const useFetch = <T,>(
         } else {
           result = await response.json(); // Fallback to JSON if not MessagePack
         }
-        if (JSON.stringify(data) !== JSON.stringify(result)) {
+
+        // Compare with dataRef instead of state
+        if (JSON.stringify(dataRef.current) !== JSON.stringify(result)) {
+          dataRef.current = result;
           setData(result);
         }
         setLoading(false);
@@ -136,19 +144,25 @@ const useFetch = <T,>(
         setLoading(false);
       }
     },
-    [url, method, postData, data]
+    [url, method, postData, options.onProgress]
   );
 
   useEffect(() => {
     let intervalId: NodeJS.Timeout | null = null;
     let isMounted = true;
 
-    if (method === "GET") {
-      fetchData(); // Auto-fetch for GET
-      if (pollIntervalMs) {
-        intervalId = setInterval(() => fetchData(), pollIntervalMs);
+    const initialFetch = async () => {
+      if (method === "GET") {
+        await fetchData(); // Auto-fetch for GET
+
+        // Only set up polling after initial fetch completes
+        if (pollIntervalMs && isMounted) {
+          intervalId = setInterval(() => fetchData(), pollIntervalMs);
+        }
       }
-    }
+    };
+
+    initialFetch();
 
     return () => {
       isMounted = false;

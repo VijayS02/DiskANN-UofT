@@ -68,6 +68,7 @@ class DataProvider():
         return json.load(open(os.path.join(exp_folder, "query_info.json")))
 
     def load_query_metric(self, experiment_id, parquet_name):
+        print("Loading query metric")
         exp_folder = os.path.join(RESULT_PATH, experiment_id)
         if not os.path.exists(exp_folder):
             raise ValueError("Experiment does not exist")
@@ -79,6 +80,7 @@ class DataProvider():
         return pd.read_parquet(parquet_file)
 
     def load_construction_metric(self, index_name, parquet_name):
+        print("Loading construction metric")
         index_dir = os.path.join(INDEX_DIR, index_name)
         if not os.path.exists(index_dir):
             raise ValueError("Index does not exist")
@@ -145,6 +147,65 @@ class DataProvider():
         df = pd.DataFrame(all_edges, columns=["parent", "node", "qid"])
         df.to_parquet(used_edges_file, index=False)
         print("Stored used edges to disk as parquet")
+
+        return df
+    
+    def get_useful_edges(self, experiment_id):
+        exp = self.get_experiment(experiment_id)
+        exp_folder = os.path.join(RESULT_PATH, experiment_id)
+        os.makedirs(exp_folder, exist_ok=True)
+
+        useful_edges_file = os.path.join(exp_folder, "useful_edges.parquet")
+
+        # Load if already computed
+        if os.path.exists(useful_edges_file):
+            print("Loading precomputed useful edges")
+            return pd.read_parquet(useful_edges_file)
+
+        # Load data once outside the loop
+        visited_df = self.load_query_metric(experiment_id, 'visited_node')
+        end_queries = self.load_query_metric(exp['id'], 'end_query')
+        graph = self.get_graph(exp['index_name'])
+        
+        # Create a lookup dictionary for best_k values to avoid repeated lookups
+        best_k_dict = dict(zip(end_queries["qid"], end_queries["best_k"]))
+        
+        useful_edges = []
+
+        # Process all queries at once by grouping
+        for qid, group in tqdm(visited_df.groupby("qid", sort=True), desc="Computing useful edges"):
+            best_k = best_k_dict[qid]
+            visited_order = group['nodeid'].to_numpy(dtype=np.uint32)
+            
+            # Optimized version of extract_useful_edges
+            seen = set([visited_order[0]])
+            parents = {}
+            
+            # Build parent map
+            for node in visited_order:
+                for neighbor in graph.get(node, []):
+                    if neighbor not in seen:
+                        seen.add(neighbor)
+                        parents[neighbor] = node
+            
+            # Process best_k nodes
+            visited = set()
+            edges_for_query = []
+            
+            for node in best_k:
+                current = np.uint32(node)
+                while current in parents and current not in visited:
+                    visited.add(current)
+                    parent = parents[current]
+                    edges_for_query.append((parent, current, qid))
+                    current = np.uint32(parent)
+            
+            useful_edges.extend(edges_for_query)
+
+        # Convert to DataFrame once at the end
+        df = pd.DataFrame(useful_edges, columns=["parent", "node", "qid"])
+        df.to_parquet(useful_edges_file, index=False)
+        print("Stored useful edges to disk as parquet")
 
         return df
 

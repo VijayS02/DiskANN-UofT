@@ -23,6 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { ResultInfo } from "../query/page";
 
 export default function Page() {
   const [code, setCode] = useState("# Write your code here\n");
@@ -64,50 +65,49 @@ export default function Page() {
   }, []);
 
   return (
-    <div className="space-y-3">
-      <div className="flex justify-between">
-        <h1 className="text-2xl font-semibold">Python Sandbox</h1>
-        <div className="flex">
-          <Button size="sm" onClick={handleRunCode}>
-            Run Code
-          </Button>
-        </div>
-      </div>
-
-      <div className="border-2 border-gray-300 rounded-md overflow-hidden">
-        <Editor
-          height="60vh"
-          defaultLanguage="python"
-          value={code}
-          onChange={(val) => setCode(val || "")}
-          theme="vs-dark"
-          onMount={(editor, monaco) => {
-            editor.addCommand(
-              monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter,
-              () => runRef.current()
-            );
-          }}
-          options={{
-            fontSize: 14,
-            minimap: { enabled: false },
-            wordWrap: "on",
-          }}
-        />
-
-        <div className="bg-[#1e1e1e] flex justify-end p-3">
-          <FileManager setCode={setCode} code={code} />
+    <div className="grid grid-cols-4 h-full">
+      <div className="col-span-3 flex h-full flex-col min-h-0">
+        <div className="bg-[#1e1e1e] basis-3/4 overflow-hidden">
+          <div className="flex p-3">
+            <FileManager setCode={setCode} code={code} />
+          </div>
+          <Editor
+            height="100%"
+            defaultLanguage="python"
+            value={code}
+            onChange={(val) => setCode(val || "")}
+            theme="vs-dark"
+            onMount={(editor, monaco) => {
+              editor.addCommand(
+                monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter,
+                () => runRef.current()
+              );
+            }}
+            options={{
+              fontSize: 14,
+              minimap: { enabled: false },
+              wordWrap: "on",
+            }}
+          />
         </div>
 
-        <div className="bg-gray-900 text-white p-4 h-[20vh]">
+        <div className="bg-gray-900 text-white p-4 min-h-0 basis-1/4 flex-1">
           <div
             id="terminal"
             ref={terminalRef}
-            className="h-full overflow-auto font-mono text-sm"
+            className="font-mono overflow-auto h-full text-sm"
           ></div>
         </div>
       </div>
 
-      <Graphs />
+      <div className="flex flex-col h-full min-h-0">
+        <div className="basis-1/2">
+          <AvailableIDs />
+        </div>
+        <div className="basis-1/2">
+          <Graphs />
+        </div>
+      </div>
     </div>
   );
 }
@@ -223,7 +223,39 @@ function FileManager({
     : "Unselected";
 
   return (
-    <div className="flex gap-2 items-center mr-2">
+    <div className="flex items-center w-full justify-between">
+      <div className="flex gap-2 items-center mr-2">
+        <Select value={selectedFile || ""} onValueChange={setSelectedFile}>
+          <SelectTrigger className="w-[180px] bg-white">
+            <SelectValue placeholder="Choose file" />
+          </SelectTrigger>
+          <SelectContent className="z-[9999]">
+            {fileList?.map((file) => (
+              <SelectItem key={file} value={file}>
+                {file}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        <Input
+          value={newFileName}
+          onChange={(e) => setNewFileName(e.target.value)}
+          placeholder="New file name"
+          className="w-40 bg-white"
+        />
+        <Button variant="outline" onClick={createFile}>
+          Create
+        </Button>
+
+        <Button
+          variant="destructive"
+          onClick={deleteFile}
+          disabled={!selectedFile}
+        >
+          Delete
+        </Button>
+      </div>
       <div
         className={
           (status === "Saved" ? " text-green-500" : "text-white") +
@@ -232,36 +264,48 @@ function FileManager({
       >
         {status}
       </div>
-      <Select value={selectedFile || ""} onValueChange={setSelectedFile}>
-        <SelectTrigger className="w-[180px] bg-white">
-          <SelectValue placeholder="Choose file" />
-        </SelectTrigger>
-        <SelectContent className="z-[9999]">
-          {fileList?.map((file) => (
-            <SelectItem key={file} value={file}>
-              {file}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+    </div>
+  );
+}
 
-      <Input
-        value={newFileName}
-        onChange={(e) => setNewFileName(e.target.value)}
-        placeholder="New file name"
-        className="w-40 bg-white"
-      />
-      <Button variant="outline" onClick={createFile}>
-        Create
-      </Button>
+function Queries() {
+  const { data, loading, error } = useFetch<{ results: ResultInfo[] }>(
+    "/results_list",
+    "GET",
+    undefined,
+    {
+      pollIntervalMs: 5000,
+    }
+  );
 
-      <Button
-        variant="destructive"
-        onClick={deleteFile}
-        disabled={!selectedFile}
-      >
-        Delete
-      </Button>
+  return (
+    <div className="h-full">
+      <div className="text-2xl">Query Results</div>
+      {loading && <div>Loading...</div>}
+      {error && <div className="text-red-500 mt-2">{error}</div>}
+      {
+        <div className="space-y-3 gap-2 my-2 p-3 divide-y-1 overflow-auto">
+          {data &&
+            data.results
+              .sort((a, b) => b.time - a.time)
+              .map((query, i) => (
+                <div className="p-2" key={i}>
+                  <div className="text-lg">{query.id}</div>
+                  <div className="text-sm">
+                    {query.index_name} - {query.query_file}
+                  </div>
+                </div>
+              ))}
+        </div>
+      }
+    </div>
+  );
+}
+
+function AvailableIDs() {
+  return (
+    <div className="p-2 h-full">
+      <Queries />
     </div>
   );
 }
@@ -275,7 +319,7 @@ function Graphs() {
     if (graphList) {
       setAvailableGraphs(graphList);
       if (!selectedGraph && graphList.length > 0) {
-        setSelectedGraph(graphList[0]);
+        setSelectedGraph("NONE");
       }
     }
   }, [graphList]);
@@ -328,6 +372,7 @@ function MultiGraphRenderer({
               <SelectValue placeholder="Select a graph" />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem value="NONE">None</SelectItem>
               {graphIds.map((graphId) => (
                 <SelectItem key={graphId} value={graphId}>
                   {graphId.replace(".msgpack", "")}
@@ -338,7 +383,9 @@ function MultiGraphRenderer({
         </CardAction>
       </CardHeader>
       <CardContent>
-        {selectedGraph && <RenderGraph graphId={selectedGraph} />}
+        {selectedGraph && selectedGraph !== "NONE" && (
+          <RenderGraph graphId={selectedGraph} />
+        )}
       </CardContent>
     </Card>
   );
